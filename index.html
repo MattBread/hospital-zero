@@ -92,7 +92,12 @@ const mat={
  glass:new THREE.MeshStandardMaterial({color:0x58727e}),
  black:new THREE.MeshStandardMaterial({color:0x252f35}),
  red:new THREE.MeshStandardMaterial({color:0x922e31,emissive:0x3b0809}),
- light:new THREE.MeshStandardMaterial({color:0xf0f5f8,emissive:0x667785})
+ light:new THREE.MeshStandardMaterial({color:0xf0f5f8,emissive:0x667785}),
+ stain:new THREE.MeshStandardMaterial({color:0x626d70,roughness:1}),
+ paper:new THREE.MeshStandardMaterial({color:0xc7c5b9,roughness:1}),
+ crate:new THREE.MeshStandardMaterial({color:0x665b49,roughness:0.95}),
+ rubber:new THREE.MeshStandardMaterial({color:0x202529,roughness:0.9}),
+ warning:new THREE.MeshStandardMaterial({color:0xb4a16b,roughness:0.9}),
 };
 
 function box(name,x,y,z,sx,sy,sz,material){
@@ -168,6 +173,68 @@ box('Paper note',-4.82,1.65,1.9,0.035,0.55,0.42,mat.sheet);
 for(const [y,w] of [[1.75,0.28],[1.65,0.22],[1.55,0.25]])
  box('Writing',-4.79,y,1.9,0.018,0.018,w,mat.dark);
 
+// ENVIRONMENT EXPANSION: PATIENT ROOM 01
+function makeWheelchair(x,z){
+ box('Wheelchair seat',x,0.55,z,0.65,0.12,0.65,mat.black);
+ box('Wheelchair back',x,0.95,z+0.28,0.65,0.75,0.1,mat.black);
+ box('Wheelchair footrest',x,0.28,z-0.42,0.5,0.06,0.28,mat.metal);
+ for(const side of [-1,1]){
+  const wheel=new THREE.Mesh(
+   new THREE.TorusGeometry(0.32,0.055,8,18),
+   mat.rubber
+  );
+  wheel.position.set(x+side*0.42,0.38,z+0.08);
+  wheel.rotation.y=Math.PI/2;
+  wheel.castShadow=true;
+  scene.add(wheel);
+  box('Wheelchair handle',x+side*0.25,1.35,z+0.32,0.06,0.35,0.06,mat.metal);
+ }
+ box('Wheelchair front caster',x+0.22,0.15,z-0.42,0.12,0.12,0.12,mat.rubber);
+}
+
+function makeMedicalCart(x,z){
+ box('Medical cart lower shelf',x,0.4,z,0.8,0.08,0.48,mat.metal);
+ box('Medical cart top',x,0.95,z,0.85,0.08,0.52,mat.metal);
+ for(const dx of [-0.34,0.34])for(const dz of [-0.18,0.18]){
+  box('Cart support',x+dx,0.67,z+dz,0.045,0.55,0.045,mat.metal);
+  box('Cart caster',x+dx,0.12,z+dz,0.12,0.12,0.12,mat.rubber);
+ }
+ box('Cart supply box',x-0.12,1.12,z,0.25,0.25,0.28,mat.paper);
+ box('Cart tray',x+0.18,1.1,z-0.04,0.25,0.035,0.28,mat.glass);
+}
+
+function makeWallNotice(x,y,z,rotation=0){
+ const notice=box('Hospital notice',x,y,z,0.035,0.52,0.72,mat.paper);
+ notice.rotation.y=rotation;
+ const line1=box('Notice text',x+Math.sin(rotation)*0.025,y+0.1,z-Math.cos(rotation)*0.025,0.015,0.025,0.48,mat.dark);
+ line1.rotation.y=rotation;
+ const line2=box('Notice text',x+Math.sin(rotation)*0.025,y-0.02,z-Math.cos(rotation)*0.025,0.015,0.02,0.38,mat.dark);
+ line2.rotation.y=rotation;
+ const line3=box('Notice text',x+Math.sin(rotation)*0.025,y-0.12,z-Math.cos(rotation)*0.025,0.015,0.02,0.43,mat.dark);
+ line3.rotation.y=rotation;
+}
+
+function makeSupplyCrate(x,z,size=0.8){
+ box('Abandoned supply crate',x,size/2,z,size,size,size,mat.crate);
+ box('Crate top seam',x,size+0.01,z,size*0.94,0.025,size*0.94,mat.warning);
+ box('Crate label',x,size*0.62,z-size/2-0.018,size*0.38,size*0.2,0.025,mat.paper);
+}
+
+function makeWallStain(x,y,z,sx,sy,sz,rotation=0){
+ const stain=box('Wall stain',x,y,z,sx,sy,sz,mat.stain);
+ stain.rotation.y=rotation;
+}
+
+// Patient room wall details
+makeWallNotice(-4.82,2.1,-1.3);
+makeWallNotice(4.82,2.25,2.9,Math.PI);
+makeMedicalCart(0.9,3.1);
+makeWheelchair(-0.3,1.1);
+makeWallStain(-4.87,1.1,0.4,0.025,0.48,1.1);
+makeWallStain(4.87,2.1,-1.4,0.025,0.6,0.9,Math.PI);
+box('Discarded medical tray',2.2,0.08,-3.2,0.7,0.08,0.45,mat.metal);
+box('Discarded bandage',2.1,0.14,-3.2,0.22,0.08,0.15,mat.sheet);
+
 lamp(0,-1.5,9);
 
 // MAIN CORRIDOR
@@ -210,19 +277,54 @@ sideRoom(-1,10,'PATIENT ROOM 02');
 sideRoom(1,16,'TREATMENT ROOM');
 sideRoom(-1,22,'STORAGE ROOM');
 
-for(const z of [9,14,20,26,31]){
- box('Left wall handrail',-1.97,0.95,z,0.045,0.08,1.5,mat.metal);
- box('Right wall handrail',1.97,0.95,z,0.045,0.08,1.5,mat.metal);
-}
+// ENVIRONMENT EXPANSION: CORRIDOR
+makeMedicalCart(-0.7,12.8);
+makeWheelchair(0.9,18.4);
+makeWallNotice(-1.98,2.2,11.9);
+makeWallNotice(1.98,2.2,18.2,Math.PI);
+makeWallNotice(-1.98,2.2,24.1);
+makeWallStain(-1.985,1.55,15.2,0.025,0.75,1.2);
+makeWallStain(1.985,1.3,22.7,0.025,0.6,0.95,Math.PI);
 box('Fallen corridor trolley',0.7,0.35,13.2,0.8,0.12,0.55,mat.metal);
 box('Trolley wheel',0.4,0.12,13.2,0.13,0.13,0.13,mat.black);
 box('Broken chair seat',-0.5,0.3,24.7,0.65,0.12,0.65,mat.dark);
 box('Broken chair back',-0.5,0.6,25,0.65,0.55,0.1,mat.dark);
+box('Loose medical papers',-0.8,0.015,16.1,0.45,0.025,0.35,mat.paper);
+box('Loose medical papers',-0.35,0.018,16.25,0.4,0.025,0.3,mat.sheet);
 
 for(const z of [8.2,13.5,19,25,30.5])lamp(0,z,8);
 box('Room sign 02',-1.98,2.65,8.9,0.035,0.3,0.9,mat.red);
 box('Treatment sign',1.98,2.65,14.6,0.035,0.3,1.15,mat.red);
 box('Storage sign',-1.98,2.65,20.6,0.035,0.3,0.85,mat.red);
+
+// ENVIRONMENT EXPANSION: PATIENT ROOM 02
+makeMedicalCart(-4.4,9.4);
+makeWallNotice(-6.28,2.2,9.7,Math.PI/2);
+box('Patient room 02 bedside table',-3.1,0.45,11.1,0.65,0.8,0.55,mat.dark);
+box('Patient room 02 table top',-3.1,0.88,11.1,0.72,0.07,0.62,mat.metal);
+box('Patient chart',-3.1,0.94,11.1,0.32,0.025,0.22,mat.paper);
+makeWallStain(-6.28,1.2,10.9,0.025,0.6,0.8,Math.PI/2);
+
+// ENVIRONMENT EXPANSION: TREATMENT ROOM
+makeMedicalCart(4.5,15.1);
+makeWallNotice(6.28,2.2,16.8,Math.PI/2);
+box('Treatment counter',4.45,0.65,17.5,1.7,1.2,0.55,mat.dark);
+box('Treatment counter top',4.45,1.28,17.5,1.8,0.08,0.62,mat.metal);
+box('Treatment instrument tray',4.3,1.36,17.45,0.55,0.05,0.32,mat.glass);
+box('Treatment supply bottle',4.75,1.48,17.45,0.14,0.2,0.14,mat.paper);
+makeWallStain(6.28,1.45,15.4,0.025,0.75,1.05,Math.PI/2);
+
+// ENVIRONMENT EXPANSION: STORAGE ROOM
+makeSupplyCrate(-4.3,21.0,0.8);
+makeSupplyCrate(-5.5,21.8,0.7);
+makeSupplyCrate(-4.4,23.0,0.65);
+box('Storage shelf upright',-5.8,1.4,22.7,0.08,2.8,0.08,mat.metal);
+box('Storage shelf upright',-4.6,1.4,22.7,0.08,2.8,0.08,mat.metal);
+box('Storage shelf upper',-5.2,2.1,22.7,1.3,0.08,0.55,mat.metal);
+box('Storage shelf lower',-5.2,0.95,22.7,1.3,0.08,0.55,mat.metal);
+box('Storage supply box',-5.2,2.35,22.7,0.5,0.4,0.4,mat.paper);
+makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
+makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
 
 // PLAYER AND HUD
 const keys={};
