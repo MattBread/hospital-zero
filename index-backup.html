@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital Zero | Mxtt704</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;overflow:hidden;background:#18232b;color:#e8edf2;font-family:Arial,sans-serif}
+#hud{position:fixed;inset:0;z-index:2;pointer-events:none}
+#title{position:absolute;top:22px;left:24px;letter-spacing:4px;font-size:13px;text-shadow:0 1px 4px #000}
+#credits{position:absolute;top:22px;right:24px;text-align:right;font-size:12px;line-height:1.8;color:#e0e8ef;text-shadow:0 1px 4px #000}
+#status{position:absolute;bottom:24px;left:24px;font-size:12px;line-height:1.8;text-shadow:0 1px 5px #000}
+#hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);width:90%;text-align:center;font-size:13px;text-shadow:0 1px 5px #000}
+#crosshair{position:absolute;top:50%;left:50%;width:6px;height:6px;border:1px solid white;border-radius:50%;transform:translate(-50%,-50%)}
+#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(#344754,#10171d)}
+#panel{max-width:620px;width:100%;padding:35px 25px;text-align:center;border:1px solid #657582;background:#18232b}
+h1{font-size:clamp(32px,7vw,60px);letter-spacing:6px;margin:15px 0}
+.sub{color:#d4e0e9;font-size:11px;letter-spacing:3px}
+button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#111820;font-weight:bold;cursor:pointer}
+.instructions{margin-top:20px;color:#e0e8ef;font-size:13px;line-height:2}
+.small{margin-top:18px;color:#b7c5d0;font-size:11px}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<div id="hud">
+  <div id="title">HOSPITAL ZERO</div>
+  <div id="credits">A game by Mxtt704<br>YouTube: Mxtt704<br>TikTok: Mxtt704</div>
+  <div id="crosshair"></div>
+  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>LOCATION: PATIENT ROOM 01<br>OBJECTIVE: Explore the hospital.</div>
+  <div id="hint">Enter the hospital when you are ready.</div>
+</div>
+<div id="overlay">
+  <div id="panel">
+    <div class="sub">AN ATMOSPHERIC SURVIVAL HORROR GAME</div>
+    <h1>HOSPITAL ZERO</h1>
+    <div class="sub">YOU WOKE UP SOMEWHERE YOU SHOULDN'T BE.</div>
+    <button id="start" type="button">ENTER THE HOSPITAL</button>
+    <div class="instructions">
+      <b>W A S D</b> — Move<br>
+      <b>MOUSE</b> — Look around<br>
+      <b>E</b> — Pick up flashlight<br>
+      <b>F</b> — Toggle flashlight<br>
+      <b>SHIFT</b> — Run<br>
+      <b>ESC</b> — Release mouse<br>
+      <b>GAMEPAD</b> — Left stick moves, right stick looks
+    </div>
+    <div class="small">PROTOTYPE 02 · NO COMBAT · STAY QUIET</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x18232b);
+scene.fog = new THREE.FogExp2(0x18232b, 0.006);
+
+const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,150);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.shadowMap.enabled=true;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.25;
+renderer.domElement.style.cssText='position:fixed;inset:0;z-index:0';
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xd7e6f2,0x555b60,1.35));
+
+const mainLight=new THREE.PointLight(0xd8eaff,25,20,2);
+mainLight.position.set(0,3.35,-1.5);
+scene.add(mainLight);
+
+const beam=new THREE.SpotLight(0xe1efff,0,24,Math.PI/7,0.35,1.2);
+camera.add(beam);
+camera.add(beam.target);
+beam.target.position.set(0,-0.1,-1);
+scene.add(camera);
+
+const mat={
+ floor:new THREE.MeshStandardMaterial({color:0x535d63,roughness:0.95}),
+ wall:new THREE.MeshStandardMaterial({color:0x89969e,roughness:0.95}),
+ dark:new THREE.MeshStandardMaterial({color:0x39464e,roughness:0.9}),
+ metal:new THREE.MeshStandardMaterial({color:0x87949b,metalness:0.45,roughness:0.5}),
+ bed:new THREE.MeshStandardMaterial({color:0xb7c0c4}),
+ sheet:new THREE.MeshStandardMaterial({color:0xe0e4e1}),
+ glass:new THREE.MeshStandardMaterial({color:0x58727e}),
+ black:new THREE.MeshStandardMaterial({color:0x252f35}),
+ red:new THREE.MeshStandardMaterial({color:0x922e31,emissive:0x3b0809}),
+ light:new THREE.MeshStandardMaterial({color:0xf0f5f8,emissive:0x667785})
+};
+
+function box(name,x,y,z,sx,sy,sz,material){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
+ m.name=name;
+ m.position.set(x,y,z);
+ m.castShadow=true;
+ m.receiveShadow=true;
+ scene.add(m);
+ return m;
+}
+
+function lamp(x,z,power=8){
+ const light=new THREE.PointLight(0xe0efff,power,10,2);
+ light.position.set(x,3.35,z);
+ scene.add(light);
+ box('Ceiling lamp',x,3.68,z,0.7,0.045,0.25,mat.light);
+ return light;
+}
+
+// STARTING PATIENT ROOM
+box('Patient room floor',0,-0.12,0,10,0.24,12,mat.floor);
+box('Patient room ceiling',0,3.8,0,10,0.2,12,mat.dark);
+box('Back wall',0,1.8,-6,10,3.8,0.2,mat.wall);
+box('Left wall',-5,1.8,0,0.2,3.8,12,mat.wall);
+box('Right wall',5,1.8,0,0.2,3.8,12,mat.wall);
+box('Front left wall',-3.45,1.8,6,3.1,3.8,0.2,mat.wall);
+box('Front right wall',3.45,1.8,6,3.1,3.8,0.2,mat.wall);
+box('Front header',0,3.55,6,3.8,0.5,0.2,mat.wall);
+
+box('Locked rear door',0,1.5,-5.86,2,3,0.12,mat.dark);
+box('Door window',0,2.15,-5.78,0.65,0.5,0.035,mat.glass);
+box('Door handle',0.72,1.45,-5.72,0.12,0.08,0.08,mat.metal);
+
+box('Emergency sign',-4.84,2.7,-3.9,0.04,0.35,1,mat.red);
+box('Emergency glow',-4.8,2.7,-3.9,0.03,0.12,0.7,
+ new THREE.MeshBasicMaterial({color:0xff3434}));
+
+function makeBed(x,z){
+ box('Bed frame',x,0.55,z,1.45,0.16,2.5,mat.metal);
+ box('Mattress',x,0.68,z,1.38,0.18,2.42,mat.bed);
+ box('Sheet',x,0.79,z+0.25,1.3,0.05,1.35,mat.sheet);
+ box('Pillow',x,0.81,z-0.78,0.65,0.12,0.42,mat.sheet);
+ for(const dx of [-0.58,0.58])for(const dz of [-1.05,1.05])
+  box('Bed leg',x+dx,0.27,z+dz,0.08,0.55,0.08,mat.metal);
+ box('Bed rail',x,0.98,z+1.15,1.42,0.06,0.06,mat.metal);
+}
+makeBed(-2.6,-1.5);
+makeBed(2.6,1.7);
+
+function makeCabinet(x,z){
+ box('Cabinet',x,0.55,z,0.72,1,0.65,mat.dark);
+ box('Cabinet top',x,1.08,z,0.78,0.08,0.7,mat.metal);
+ box('Drawer',x,0.72,z+0.34,0.55,0.2,0.035,mat.metal);
+ box('Drawer handle',x,0.72,z+0.38,0.18,0.035,0.035,mat.black);
+}
+makeCabinet(-3.7,-3.1);
+makeCabinet(3.65,0);
+
+box('Monitor stand',-3.7,1.5,-3.9,0.08,0.8,0.08,mat.metal);
+box('Medical monitor',-3.7,2,-3.9,0.75,0.55,0.16,mat.black);
+box('Monitor screen',-3.7,2,-3.8,0.62,0.4,0.025,
+ new THREE.MeshBasicMaterial({color:0x18352f}));
+box('Monitor trace',-3.7,2,-3.78,0.42,0.018,0.012,
+ new THREE.MeshBasicMaterial({color:0x7ad9a7}));
+box('IV pole',3.75,1.5,2,0.045,2.7,0.045,mat.metal);
+box('IV bar',3.75,2.83,2,0.65,0.05,0.05,mat.metal);
+box('IV bag',3.75,2.55,2,0.32,0.42,0.12,mat.glass);
+box('Trolley',-1.5,0.8,3.9,1,0.12,0.65,mat.metal);
+box('Trolley tray',-1.5,0.92,3.9,0.7,0.05,0.42,mat.bed);
+box('Fallen stool',1.2,0.25,4.3,0.65,0.12,0.65,mat.dark);
+box('Paper note',-4.82,1.65,1.9,0.035,0.55,0.42,mat.sheet);
+for(const [y,w] of [[1.75,0.28],[1.65,0.22],[1.55,0.25]])
+ box('Writing',-4.79,y,1.9,0.018,0.018,w,mat.dark);
+
+lamp(0,-1.5,9);
+
+// MAIN CORRIDOR
+box('Corridor floor',0,-0.13,19,4.2,0.24,26,mat.floor);
+box('Corridor ceiling',0,3.8,19,4.2,0.2,26,mat.dark);
+
+// Corridor walls are deliberately split around the three room entrances.
+// Left side: Patient Room 02 at z=10, Storage Room at z=22.
+// Right side: Treatment Room at z=16.
+function corridorWall(side,start,end){
+ if(end<=start)return;
+ const len=end-start;
+ box((side<0?'Left':'Right')+' corridor wall',
+     side*2.1,1.8,(start+end)/2,0.2,3.8,len,mat.wall);
+}
+for(const [a,b] of [[6,9.1],[10.9,21.1],[22.9,32]])
+ corridorWall(-1,a,b);
+for(const [a,b] of [[6,15.1],[16.9,32]])
+ corridorWall(1,a,b);
+
+// SIDE ROOMS
+function sideRoom(side,z,name){
+ const cx=side*4.3, outer=side*6.4;
+ box(name+' floor',cx,-0.13,z,4.2,0.24,4.8,mat.floor);
+ box(name+' ceiling',cx,3.8,z,4.2,0.2,4.8,mat.dark);
+ box(name+' outer wall',outer,1.8,z,0.2,3.8,4.8,mat.wall);
+ box(name+' back wall',cx,1.8,z+2.4,4.2,3.8,0.2,mat.wall);
+
+ // Keep the entrance open between z-0.9 and z+0.9.
+ box(name+' entrance wall A',side*2.25,1.8,z-1.65,0.2,3.8,1.5,mat.wall);
+ box(name+' entrance wall B',side*2.25,1.8,z+1.65,0.2,3.8,1.5,mat.wall);
+
+ box(name+' bed frame',cx,0.55,z+0.2,1.25,0.16,2.1,mat.metal);
+ box(name+' mattress',cx,0.68,z+0.2,1.16,0.16,1.98,mat.bed);
+ box(name+' cabinet',cx-side*1.25,0.55,z-1,0.6,1,0.6,mat.dark);
+ box(name+' wall panel',side*6.28,2.2,z-1,0.035,0.65,0.85,mat.black);
+ lamp(cx,z-1.3,6);
+}
+sideRoom(-1,10,'PATIENT ROOM 02');
+sideRoom(1,16,'TREATMENT ROOM');
+sideRoom(-1,22,'STORAGE ROOM');
+
+for(const z of [9,14,20,26,31]){
+ box('Left wall handrail',-1.97,0.95,z,0.045,0.08,1.5,mat.metal);
+ box('Right wall handrail',1.97,0.95,z,0.045,0.08,1.5,mat.metal);
+}
+box('Fallen corridor trolley',0.7,0.35,13.2,0.8,0.12,0.55,mat.metal);
+box('Trolley wheel',0.4,0.12,13.2,0.13,0.13,0.13,mat.black);
+box('Broken chair seat',-0.5,0.3,24.7,0.65,0.12,0.65,mat.dark);
+box('Broken chair back',-0.5,0.6,25,0.65,0.55,0.1,mat.dark);
+
+for(const z of [8.2,13.5,19,25,30.5])lamp(0,z,8);
+box('Room sign 02',-1.98,2.65,8.9,0.035,0.3,0.9,mat.red);
+box('Treatment sign',1.98,2.65,14.6,0.035,0.3,1.15,mat.red);
+box('Storage sign',-1.98,2.65,20.6,0.035,0.3,0.85,mat.red);
+
+// PLAYER AND HUD
+const keys={};
+let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,started=false,lastPadButton=false;
+const player={x:0,z:4.7,speed:2.7};
+const hint=document.getElementById('hint');
+const overlay=document.getElementById('overlay');
+const lightState=document.getElementById('lightState');
+
+// FLASHLIGHT PICKUP
+const flashlightItem=new THREE.Group();
+const flashlightBody=new THREE.Mesh(
+ new THREE.CylinderGeometry(0.065,0.085,0.42,12),
+ new THREE.MeshStandardMaterial({color:0x252b30,metalness:0.8,roughness:0.3})
+);
+flashlightBody.rotation.x=Math.PI/2;
+flashlightItem.add(flashlightBody);
+const lens=new THREE.Mesh(
+ new THREE.CircleGeometry(0.065,12),
+ new THREE.MeshStandardMaterial({color:0xffe9a6,emissive:0x665020})
+);
+lens.position.z=-0.215;
+flashlightItem.add(lens);
+flashlightItem.position.set(-3.7,1.18,-3.1);
+flashlightItem.rotation.x=0.15;
+scene.add(flashlightItem);
+
+function updateCamera(){
+ camera.rotation.order='YXZ';
+ camera.rotation.y=yaw;
+ camera.rotation.x=pitch;
+ camera.position.set(player.x,1.65,player.z);
+}
+
+function toggleFlashlight(){
+ if(!flashlightCollected){
+  hint.textContent='Find the flashlight on the cabinet first.';
+  return;
+ }
+ flashlightOn=!flashlightOn;
+ beam.intensity=flashlightOn?38:0;
+ lightState.textContent=flashlightOn?'ON':'OFF';
+ hint.textContent=flashlightOn?'The beam cuts through the dust.':'The room sinks back into darkness.';
+}
+
+function tryPickupFlashlight(){
+ if(!started||flashlightCollected)return;
+ const d=Math.hypot(player.x-flashlightItem.position.x,player.z-flashlightItem.position.z);
+ if(d<1.5){
+  flashlightCollected=true;
+  scene.remove(flashlightItem);
+  lightState.textContent='OFF';
+  hint.textContent='Flashlight acquired! Press F to turn it on.';
+ }else{
+  hint.textContent='Move closer to the flashlight on the cabinet, then press E.';
+ }
+}
+
+function startGame(){
+ if(started)return;
+ started=true;
+ overlay.style.display='none';
+ hint.textContent='Find the flashlight, then explore the corridor.';
+ renderer.domElement.requestPointerLock?.();
+}
+document.getElementById('start').addEventListener('click',startGame);
+renderer.domElement.addEventListener('click',()=>{
+ if(started&&document.pointerLockElement!==renderer.domElement)
+  renderer.domElement.requestPointerLock?.();
+});
+document.addEventListener('mousemove',e=>{
+ if(!started||document.pointerLockElement!==renderer.domElement)return;
+ yaw-=e.movementX*0.0022;
+ pitch=Math.max(-1.35,Math.min(1.35,pitch-e.movementY*0.0022));
+ updateCamera();
+});
+document.addEventListener('keydown',e=>{
+ keys[e.code]=true;
+ if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code))e.preventDefault();
+ if(e.code==='KeyE'&&!e.repeat)tryPickupFlashlight();
+ if(e.code==='KeyF'&&!e.repeat)toggleFlashlight();
+ if(e.code==='Escape'&&started)hint.textContent='Click the game to resume mouse-look.';
+});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+document.addEventListener('pointerlockchange',()=>{
+ if(started&&document.pointerLockElement!==renderer.domElement)
+  hint.textContent='Click the game to resume mouse-look.';
+});
+
+// MOVEMENT AND ROOM ACCESS
+function movePlayer(dt,gx=0,gy=0){
+ let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-gy;
+ let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+gx;
+ const len=Math.hypot(f,s);
+ if(len>1){f/=len;s/=len;}
+
+ const speed=player.speed*((keys.ShiftLeft||keys.ShiftRight)?1.65:1)*dt;
+ const dx=(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed;
+ const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
+
+ let nx=player.x+dx;
+ let nz=player.z;
+
+ function canOccupy(x,z){
+  // Starting patient room
+  if(z<5.8){
+   return x>=-4.55&&x<=4.55&&z>=-5.45;
+  }
+
+  // Main corridor, with clear side-room openings
+  if(z>=5.8&&z<=31.7){
+   if(x>=-1.78&&x<=1.78)return true;
+
+   // Patient Room 02 and Storage Room are on the left
+   if(x< -1.78 && x>=-6.0){
+    return (z>=8.85&&z<=11.15) ||
+           (z>=20.85&&z<=23.15);
+   }
+
+   // Treatment Room is on the right
+   if(x>1.78&&x<=6.0){
+    return z>=14.85&&z<=17.15;
+   }
+  }
+  return false;
+ }
+
+ // Resolve movement separately on each axis.
+ if(canOccupy(nx,player.z))player.x=nx;
+
+ nx=player.x;
+ nz=player.z+dz;
+ if(canOccupy(nx,nz))player.z=nz;
+
+ player.x=Math.max(-6.0,Math.min(6.0,player.x));
+ player.z=Math.max(-5.45,Math.min(31.7,player.z));
+
+ updateCamera();
+}
+
+function gamepadInput(dt){
+ const pads=navigator.getGamepads?navigator.getGamepads():[];
+ const pad=[...pads].find(Boolean);
+ if(!pad)return false;
+ const axis=i=>Math.abs(pad.axes[i]||0)>0.16?pad.axes[i]:0;
+ yaw-=axis(2)*2.2*dt;
+ pitch=Math.max(-1.35,Math.min(1.35,pitch+axis(3)*1.7*dt));
+ movePlayer(dt,axis(0),axis(1));
+ const pressed=!!pad.buttons[0]?.pressed;
+ if(pressed&&!lastPadButton)toggleFlashlight();
+ lastPadButton=pressed;
+ return true;
+}
+
+const clock=new THREE.Clock();
+let elapsed=0;
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),0.04);
+ elapsed+=dt;
+ if(started){
+  if(!gamepadInput(dt))movePlayer(dt);
+ }
+ // Keep the main room light bright; only a very subtle variation.
+ mainLight.intensity=25+Math.sin(elapsed*7)*0.3;
+ renderer.render(scene,camera);
+}
+updateCamera();
+animate();
+
+window.addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
