@@ -31,7 +31,7 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
   <div id="title">HOSPITAL ZERO</div>
   <div id="credits">A game by Mxtt704<br>YouTube: Mxtt704<br>TikTok: Mxtt704</div>
   <div id="crosshair"></div>
-  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>LOCATION: PATIENT ROOM 01<br>OBJECTIVE: Explore the hospital.</div>
+  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>KEYCARD: <span id="keyState">NOT FOUND</span><br>LOCATION: HOSPITAL<br>OBJECTIVE: Find a keycard and unlock the exit.</div>
   <div id="hint">Enter the hospital when you are ready.</div>
 </div>
 <div id="overlay">
@@ -43,13 +43,13 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
     <div class="instructions">
       <b>W A S D</b> — Move<br>
       <b>MOUSE</b> — Look around<br>
-      <b>E</b> — Pick up flashlight<br>
+      <b>E</b> — Interact / pick up items<br>
       <b>F</b> — Toggle flashlight<br>
       <b>SHIFT</b> — Run<br>
       <b>ESC</b> — Release mouse<br>
       <b>GAMEPAD</b> — Left stick moves, right stick looks
     </div>
-    <div class="small">PROTOTYPE 02 · NO COMBAT · STAY QUIET</div>
+    <div class="small">PROTOTYPE 03 · NO COMBAT · STAY QUIET</div>
   </div>
 </div>
 
@@ -84,6 +84,11 @@ scene.add(camera);
 
 const mat={
  floor:new THREE.MeshStandardMaterial({color:0x535d63,roughness:0.95}),
+ outdoorFloor:new THREE.MeshStandardMaterial({color:0x555b50,roughness:1}),
+ asphalt:new THREE.MeshStandardMaterial({color:0x292e30,roughness:1}),
+ fence:new THREE.MeshStandardMaterial({color:0x414a4c,metalness:0.45,roughness:0.75}),
+ foliage:new THREE.MeshStandardMaterial({color:0x26392c,roughness:1}),
+ concrete:new THREE.MeshStandardMaterial({color:0x646b6d,roughness:1}),
  wall:new THREE.MeshStandardMaterial({color:0x89969e,roughness:0.95}),
  dark:new THREE.MeshStandardMaterial({color:0x39464e,roughness:0.9}),
  metal:new THREE.MeshStandardMaterial({color:0x87949b,metalness:0.45,roughness:0.5}),
@@ -97,7 +102,7 @@ const mat={
  paper:new THREE.MeshStandardMaterial({color:0xc7c5b9,roughness:1}),
  crate:new THREE.MeshStandardMaterial({color:0x665b49,roughness:0.95}),
  rubber:new THREE.MeshStandardMaterial({color:0x202529,roughness:0.9}),
- warning:new THREE.MeshStandardMaterial({color:0xb4a16b,roughness:0.9}),
+ warning:new THREE.MeshStandardMaterial({color:0xb4a16b,roughness:0.9})
 };
 
 function box(name,x,y,z,sx,sy,sz,material){
@@ -121,14 +126,18 @@ function lamp(x,z,power=8){
 // STARTING PATIENT ROOM
 box('Patient room floor',0,-0.12,0,10,0.24,12,mat.floor);
 box('Patient room ceiling',0,3.8,0,10,0.2,12,mat.dark);
-box('Back wall',0,1.8,-6,10,3.8,0.2,mat.wall);
+box('Back wall left',-3.25,1.8,-6,3.5,3.8,0.2,mat.wall);
+box('Back wall right',3.25,1.8,-6,3.5,3.8,0.2,mat.wall);
+box('Back wall header',0,3.55,-6,3,0.3,0.2,mat.wall);
 box('Left wall',-5,1.8,0,0.2,3.8,12,mat.wall);
 box('Right wall',5,1.8,0,0.2,3.8,12,mat.wall);
 box('Front left wall',-3.45,1.8,6,3.1,3.8,0.2,mat.wall);
 box('Front right wall',3.45,1.8,6,3.1,3.8,0.2,mat.wall);
 box('Front header',0,3.55,6,3.8,0.5,0.2,mat.wall);
 
-box('Locked rear door',0,1.5,-5.86,2,3,0.12,mat.dark);
+const exitDoor=box('Locked rear door',0,1.5,-5.86,2,3,0.12,mat.dark);
+box('Exit keypad',1.35,1.45,-5.68,0.22,0.48,0.08,mat.black);
+const keypadLight=box('Keypad indicator',1.35,1.62,-5.62,0.08,0.06,0.025,mat.red);
 box('Door window',0,2.15,-5.78,0.65,0.5,0.035,mat.glass);
 box('Door handle',0.72,1.45,-5.72,0.12,0.08,0.08,mat.metal);
 
@@ -173,16 +182,13 @@ box('Paper note',-4.82,1.65,1.9,0.035,0.55,0.42,mat.sheet);
 for(const [y,w] of [[1.75,0.28],[1.65,0.22],[1.55,0.25]])
  box('Writing',-4.79,y,1.9,0.018,0.018,w,mat.dark);
 
-// ENVIRONMENT EXPANSION: PATIENT ROOM 01
+// PATIENT ROOM DETAILS
 function makeWheelchair(x,z){
  box('Wheelchair seat',x,0.55,z,0.65,0.12,0.65,mat.black);
  box('Wheelchair back',x,0.95,z+0.28,0.65,0.75,0.1,mat.black);
  box('Wheelchair footrest',x,0.28,z-0.42,0.5,0.06,0.28,mat.metal);
  for(const side of [-1,1]){
-  const wheel=new THREE.Mesh(
-   new THREE.TorusGeometry(0.32,0.055,8,18),
-   mat.rubber
-  );
+  const wheel=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.055,8,18),mat.rubber);
   wheel.position.set(x+side*0.42,0.38,z+0.08);
   wheel.rotation.y=Math.PI/2;
   wheel.castShadow=true;
@@ -225,7 +231,6 @@ function makeWallStain(x,y,z,sx,sy,sz,rotation=0){
  stain.rotation.y=rotation;
 }
 
-// Patient room wall details
 makeWallNotice(-4.82,2.1,-1.3);
 makeWallNotice(4.82,2.25,2.9,Math.PI);
 makeMedicalCart(0.9,3.1);
@@ -234,26 +239,19 @@ makeWallStain(-4.87,1.1,0.4,0.025,0.48,1.1);
 makeWallStain(4.87,2.1,-1.4,0.025,0.6,0.9,Math.PI);
 box('Discarded medical tray',2.2,0.08,-3.2,0.7,0.08,0.45,mat.metal);
 box('Discarded bandage',2.1,0.14,-3.2,0.22,0.08,0.15,mat.sheet);
-
 lamp(0,-1.5,9);
 
 // MAIN CORRIDOR
 box('Corridor floor',0,-0.13,19,4.2,0.24,26,mat.floor);
 box('Corridor ceiling',0,3.8,19,4.2,0.2,26,mat.dark);
 
-// Corridor walls are deliberately split around the three room entrances.
-// Left side: Patient Room 02 at z=10, Storage Room at z=22.
-// Right side: Treatment Room at z=16.
 function corridorWall(side,start,end){
  if(end<=start)return;
  const len=end-start;
- box((side<0?'Left':'Right')+' corridor wall',
-     side*2.1,1.8,(start+end)/2,0.2,3.8,len,mat.wall);
+ box((side<0?'Left':'Right')+' corridor wall',side*2.1,1.8,(start+end)/2,0.2,3.8,len,mat.wall);
 }
-for(const [a,b] of [[6,9.1],[10.9,21.1],[22.9,32]])
- corridorWall(-1,a,b);
-for(const [a,b] of [[6,15.1],[16.9,32]])
- corridorWall(1,a,b);
+for(const [a,b] of [[6,9.1],[10.9,21.1],[22.9,32]])corridorWall(-1,a,b);
+for(const [a,b] of [[6,15.1],[16.9,32]])corridorWall(1,a,b);
 
 // SIDE ROOMS
 function sideRoom(side,z,name){
@@ -262,11 +260,8 @@ function sideRoom(side,z,name){
  box(name+' ceiling',cx,3.8,z,4.2,0.2,4.8,mat.dark);
  box(name+' outer wall',outer,1.8,z,0.2,3.8,4.8,mat.wall);
  box(name+' back wall',cx,1.8,z+2.4,4.2,3.8,0.2,mat.wall);
-
- // Keep the entrance open between z-0.9 and z+0.9.
  box(name+' entrance wall A',side*2.25,1.8,z-1.65,0.2,3.8,1.5,mat.wall);
  box(name+' entrance wall B',side*2.25,1.8,z+1.65,0.2,3.8,1.5,mat.wall);
-
  box(name+' bed frame',cx,0.55,z+0.2,1.25,0.16,2.1,mat.metal);
  box(name+' mattress',cx,0.68,z+0.2,1.16,0.16,1.98,mat.bed);
  box(name+' cabinet',cx-side*1.25,0.55,z-1,0.6,1,0.6,mat.dark);
@@ -277,7 +272,7 @@ sideRoom(-1,10,'PATIENT ROOM 02');
 sideRoom(1,16,'TREATMENT ROOM');
 sideRoom(-1,22,'STORAGE ROOM');
 
-// ENVIRONMENT EXPANSION: CORRIDOR
+// CORRIDOR DETAILS
 makeMedicalCart(-0.7,12.8);
 makeWheelchair(0.9,18.4);
 makeWallNotice(-1.98,2.2,11.9);
@@ -291,13 +286,12 @@ box('Broken chair seat',-0.5,0.3,24.7,0.65,0.12,0.65,mat.dark);
 box('Broken chair back',-0.5,0.6,25,0.65,0.55,0.1,mat.dark);
 box('Loose medical papers',-0.8,0.015,16.1,0.45,0.025,0.35,mat.paper);
 box('Loose medical papers',-0.35,0.018,16.25,0.4,0.025,0.3,mat.sheet);
-
 for(const z of [8.2,13.5,19,25,30.5])lamp(0,z,8);
 box('Room sign 02',-1.98,2.65,8.9,0.035,0.3,0.9,mat.red);
 box('Treatment sign',1.98,2.65,14.6,0.035,0.3,1.15,mat.red);
 box('Storage sign',-1.98,2.65,20.6,0.035,0.3,0.85,mat.red);
 
-// ENVIRONMENT EXPANSION: PATIENT ROOM 02
+// PATIENT ROOM 02 DETAILS
 makeMedicalCart(-4.4,9.4);
 makeWallNotice(-6.28,2.2,9.7,Math.PI/2);
 box('Patient room 02 bedside table',-3.1,0.45,11.1,0.65,0.8,0.55,mat.dark);
@@ -305,7 +299,7 @@ box('Patient room 02 table top',-3.1,0.88,11.1,0.72,0.07,0.62,mat.metal);
 box('Patient chart',-3.1,0.94,11.1,0.32,0.025,0.22,mat.paper);
 makeWallStain(-6.28,1.2,10.9,0.025,0.6,0.8,Math.PI/2);
 
-// ENVIRONMENT EXPANSION: TREATMENT ROOM
+// TREATMENT ROOM DETAILS
 makeMedicalCart(4.5,15.1);
 makeWallNotice(6.28,2.2,16.8,Math.PI/2);
 box('Treatment counter',4.45,0.65,17.5,1.7,1.2,0.55,mat.dark);
@@ -314,7 +308,7 @@ box('Treatment instrument tray',4.3,1.36,17.45,0.55,0.05,0.32,mat.glass);
 box('Treatment supply bottle',4.75,1.48,17.45,0.14,0.2,0.14,mat.paper);
 makeWallStain(6.28,1.45,15.4,0.025,0.75,1.05,Math.PI/2);
 
-// ENVIRONMENT EXPANSION: STORAGE ROOM
+// STORAGE ROOM DETAILS
 makeSupplyCrate(-4.3,21.0,0.8);
 makeSupplyCrate(-5.5,21.8,0.7);
 makeSupplyCrate(-4.4,23.0,0.65);
@@ -326,9 +320,74 @@ box('Storage supply box',-5.2,2.35,22.7,0.5,0.4,0.4,mat.paper);
 makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
 makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
 
+// PHASE 1: OUTDOOR EXPLORATION
+box('Outdoor ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
+box('Road',0,-0.13,-35,7,0.08,58,mat.asphalt);
+for(let z=-10;z>=-60;z-=5)box('Road centre marking',0,-0.075,z,0.12,0.025,2.1,mat.warning);
+
+for(const side of [-1,1]){
+ box('Perimeter fence rail',side*23,1.1,-35,0.15,0.15,58,mat.fence);
+ box('Perimeter fence top rail',side*23,2.1,-35,0.15,0.12,58,mat.fence);
+ for(let z=-7;z>=-63;z-=2.5)box('Perimeter fence post',side*23,1.05,z,0.14,2.1,0.14,mat.fence);
+}
+box('Front fence left',-13,1.05,-7.5,20,2.1,0.14,mat.fence);
+box('Front fence right',13,1.05,-7.5,20,2.1,0.14,mat.fence);
+for(let x=-22;x<=22;x+=2.5){
+ if(Math.abs(x)>2.2)box('Front fence post',x,1.05,-7.5,0.14,2.1,0.14,mat.fence);
+}
+
+function makeTree(x,z,h=4){
+ box('Dead tree trunk',x,h*0.28,z,0.35,h*0.58,0.35,mat.crate);
+ const crown=new THREE.Mesh(new THREE.ConeGeometry(h*0.48,h*0.9,7),mat.foliage);
+ crown.position.set(x,h*0.78,z);
+ crown.castShadow=true;
+ scene.add(crown);
+}
+for(const [x,z,h] of [[-15,-15,4.5],[15,-18,5],[-18,-30,5.5],[18,-34,4.2],[-14,-44,5],[14,-48,5.2],[-20,-56,4.5],[20,-58,5]])makeTree(x,z,h);
+
+function makeAbandonedCar(x,z,rotation=0){
+ const car=box('Abandoned vehicle body',x,0.72,z,2.1,0.85,4.1,mat.dark);
+ car.rotation.y=rotation;
+ const roof=box('Abandoned vehicle roof',x,1.35,z-0.15,1.65,0.55,2.1,mat.concrete);
+ roof.rotation.y=rotation;
+ for(const dx of [-0.95,0.95])for(const dz of [-1.3,1.3]){
+  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.18,12),mat.rubber);
+  wheel.rotation.z=Math.PI/2;
+  wheel.position.set(x+dx,0.38,z+dz);
+  scene.add(wheel);
+ }
+}
+makeAbandonedCar(-6,-16,0.2);
+makeAbandonedCar(8,-28,-0.3);
+
+// GUARD SHACK
+box('Guard shack floor',-9,0.05,-10,4.8,0.15,4.5,mat.concrete);
+box('Guard shack rear wall',-9,1.5,-12.2,4.8,3,0.15,mat.dark);
+box('Guard shack left wall',-11.4,1.5,-10,0.15,3,4.5,mat.dark);
+box('Guard shack right wall',-6.6,1.5,-10,0.15,3,4.5,mat.dark);
+box('Guard shack roof',-9,3.05,-10,5,0.18,4.7,mat.concrete);
+box('Guard shack window',-8,1.9,-12.08,1.2,0.75,0.04,mat.glass);
+makeSupplyCrate(5,-12,0.9);
+makeSupplyCrate(6.2,-12.5,0.7);
+box('Roadside sign post',-3,1.45,-13,0.12,2.8,0.12,mat.metal);
+box('Roadside sign face',-3,2.25,-13,1.1,0.8,0.12,mat.warning);
+
+// DISTANT PRISON LANDMARK
+box('Distant prison building',0,5,-58,19,10,5,mat.concrete);
+box('Prison roof',0,10.1,-58,19.4,0.3,5.4,mat.dark);
+for(let x=-8;x<=8;x+=2)box('Prison barred window',x,6,-55.42,0.9,1.2,0.04,mat.black);
+for(const x of [-6,-3,0,3,6])box('Prison entrance pillar',x,2,-54.9,0.25,4,0.25,mat.dark);
+box('Prison entrance',0,1.6,-54.8,2,3.2,0.12,mat.black);
+
+// KEYCARD IN THE STORAGE ROOM
+const keycard=box('Security keycard',-4.9,1.12,22.35,0.28,0.035,0.18,
+ new THREE.MeshStandardMaterial({color:0x7fd8dc,emissive:0x15383a,metalness:0.25,roughness:0.35}));
+const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,0.19,0.012,0.025,
+ new THREE.MeshBasicMaterial({color:0xf3fbff}));
+
 // PLAYER AND HUD
 const keys={};
-let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,started=false,lastPadButton=false;
+let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,keycardCollected=false,exitUnlocked=false,started=false,lastPadButton=false;
 const player={x:0,z:4.7,speed:2.7};
 const hint=document.getElementById('hint');
 const overlay=document.getElementById('overlay');
@@ -370,24 +429,53 @@ function toggleFlashlight(){
  hint.textContent=flashlightOn?'The beam cuts through the dust.':'The room sinks back into darkness.';
 }
 
-function tryPickupFlashlight(){
- if(!started||flashlightCollected)return;
- const d=Math.hypot(player.x-flashlightItem.position.x,player.z-flashlightItem.position.z);
- if(d<1.5){
-  flashlightCollected=true;
-  scene.remove(flashlightItem);
-  lightState.textContent='OFF';
-  hint.textContent='Flashlight acquired! Press F to turn it on.';
- }else{
-  hint.textContent='Move closer to the flashlight on the cabinet, then press E.';
+function tryInteract(){
+ if(!started)return;
+
+ const kd=Math.hypot(player.x-keycard.position.x,player.z-keycard.position.z);
+ if(!keycardCollected&&kd<1.7){
+  keycardCollected=true;
+  scene.remove(keycard);
+  scene.remove(keycardMark);
+  document.getElementById('keyState').textContent='ACQUIRED';
+  hint.textContent='Security keycard acquired. Find the locked rear exit.';
+  return;
  }
+
+ if(Math.abs(player.x)<2.1&&Math.abs(player.z+5.2)<2.1){
+  if(!keycardCollected){
+   hint.textContent='ACCESS DENIED. Find the security keycard in the Storage Room.';
+   return;
+  }
+  if(!exitUnlocked){
+   exitUnlocked=true;
+   keypadLight.material=new THREE.MeshBasicMaterial({color:0x42ff9a});
+   exitDoor.position.x=2.5;
+   hint.textContent='ACCESS GRANTED. Exit unlocked. Head outside toward the road and prison.';
+  }else{
+   hint.textContent='The exit is unlocked. Head outside toward the road.';
+  }
+  return;
+ }
+
+ if(!flashlightCollected){
+  const d=Math.hypot(player.x-flashlightItem.position.x,player.z-flashlightItem.position.z);
+  if(d<1.5){
+   flashlightCollected=true;
+   scene.remove(flashlightItem);
+   lightState.textContent='OFF';
+   hint.textContent='Flashlight acquired! Press F to turn it on.';
+   return;
+  }
+ }
+ hint.textContent='Nothing to interact with nearby.';
 }
 
 function startGame(){
  if(started)return;
  started=true;
  overlay.style.display='none';
- hint.textContent='Find the flashlight, then explore the corridor.';
+ hint.textContent='Find the security keycard in the Storage Room to unlock the rear exit.';
  renderer.domElement.requestPointerLock?.();
 }
 document.getElementById('start').addEventListener('click',startGame);
@@ -404,7 +492,7 @@ document.addEventListener('mousemove',e=>{
 document.addEventListener('keydown',e=>{
  keys[e.code]=true;
  if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code))e.preventDefault();
- if(e.code==='KeyE'&&!e.repeat)tryPickupFlashlight();
+ if(e.code==='KeyE'&&!e.repeat)tryInteract();
  if(e.code==='KeyF'&&!e.repeat)toggleFlashlight();
  if(e.code==='Escape'&&started)hint.textContent='Click the game to resume mouse-look.';
 });
@@ -429,22 +517,22 @@ function movePlayer(dt,gx=0,gy=0){
  let nz=player.z;
 
  function canOccupy(x,z){
-  // Starting patient room
+  // Patient room and locked exit threshold
   if(z<5.8){
-   return x>=-4.55&&x<=4.55&&z>=-5.45;
+   if(z>=-5.45)return x>=-4.55&&x<=4.55;
+   if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
+   return exitUnlocked&&x>=-27&&x<=27&&z>=-63.5;
   }
 
-  // Main corridor, with clear side-room openings
+  // Outdoor area beyond the hospital
+  if(z< -7.0)return exitUnlocked&&x>=-27&&x<=27&&z>=-63.5;
+
+  // Main corridor, with side-room openings
   if(z>=5.8&&z<=31.7){
    if(x>=-1.78&&x<=1.78)return true;
-
-   // Patient Room 02 and Storage Room are on the left
-   if(x< -1.78 && x>=-6.0){
-    return (z>=8.85&&z<=11.15) ||
-           (z>=20.85&&z<=23.15);
+   if(x< -1.78&&x>=-6.0){
+    return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
    }
-
-   // Treatment Room is on the right
    if(x>1.78&&x<=6.0){
     return z>=14.85&&z<=17.15;
    }
@@ -452,16 +540,13 @@ function movePlayer(dt,gx=0,gy=0){
   return false;
  }
 
- // Resolve movement separately on each axis.
  if(canOccupy(nx,player.z))player.x=nx;
-
  nx=player.x;
  nz=player.z+dz;
  if(canOccupy(nx,nz))player.z=nz;
 
- player.x=Math.max(-6.0,Math.min(6.0,player.x));
- player.z=Math.max(-5.45,Math.min(31.7,player.z));
-
+ player.x=Math.max(exitUnlocked?-26.5:-6.0,Math.min(exitUnlocked?26.5:6.0,player.x));
+ player.z=Math.max(exitUnlocked?-63.0:-5.45,Math.min(31.7,player.z));
  updateCamera();
 }
 
@@ -488,7 +573,6 @@ function animate(){
  if(started){
   if(!gamepadInput(dt))movePlayer(dt);
  }
- // Keep the main room light bright; only a very subtle variation.
  mainLight.intensity=25+Math.sin(elapsed*7)*0.3;
  renderer.render(scene,camera);
 }
