@@ -169,19 +169,57 @@ const hint=document.getElementById('hint');
 const overlay=document.getElementById('overlay');
 const lightState=document.getElementById('lightState');
 
+let flashlightCollected = false;
+
+const flashlightItem = new THREE.Group();
+
+const flashlightBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.065, 0.085, 0.42, 12),
+  new THREE.MeshStandardMaterial({
+    color: 0x252b30,
+    metalness: 0.8,
+    roughness: 0.3
+  })
+);
+flashlightBody.rotation.x = Math.PI / 2;
+flashlightItem.add(flashlightBody);
+
+const flashlightLens = new THREE.Mesh(
+  new THREE.CircleGeometry(0.065, 12),
+  new THREE.MeshStandardMaterial({
+    color: 0xffe9a6,
+    emissive: 0x665020
+  })
+);
+flashlightLens.position.z = -0.215;
+flashlightItem.add(flashlightLens);
+
+// Place the flashlight on the bedside cabinet.
+flashlightItem.position.set(-3.7, 1.18, -3.1);
+flashlightItem.rotation.x = 0.15;
+scene.add(flashlightItem);
+
 function updateCamera(){
  camera.rotation.order='YXZ';
  camera.rotation.y=yaw;
  camera.rotation.x=pitch;
  camera.position.set(player.x,1.65,player.z);
 }
+
 function toggleFlashlight(){
+ if(!flashlightCollected){
+  hint.textContent='You need to find the flashlight first.';
+  return;
+ }
+
  flashlightOn=!flashlightOn;
  flashlight.intensity=flashlightOn?38:0;
  lightState.textContent=flashlightOn?'ON':'OFF';
- hint.textContent=flashlightOn?
-  'The beam cuts through the dust.':
-  'The room sinks back into darkness.';
+ hint.textContent=flashlightOn
+  ?'The beam cuts through the dust.'
+  :'The room sinks back into darkness.';
+}
+
 }
 function startGame(){
  started=true;overlay.style.display='none';
@@ -207,6 +245,31 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>keys[e.code]=false);
 document.addEventListener('pointerlockchange',()=>{
+
+function tryPickupFlashlight(){
+ if(!started || flashlightCollected) return;
+
+ const distance = Math.hypot(
+  player.x - flashlightItem.position.x,
+  player.z - flashlightItem.position.z
+ );
+
+ if(distance < 1.5){
+  flashlightCollected = true;
+  scene.remove(flashlightItem);
+  lightState.textContent = 'OFF';
+  hint.textContent = 'Flashlight acquired! Press F to turn it on.';
+ } else {
+  hint.textContent = 'Move closer to the flashlight and press E.';
+ }
+}
+
+document.addEventListener('keydown',e=>{
+ if(e.code === 'KeyE' && !e.repeat){
+  tryPickupFlashlight();
+ }
+});
+ 
  if(started&&document.pointerLockElement!==renderer.domElement)
   hint.textContent='Click the game to resume mouse-look.';
 });
