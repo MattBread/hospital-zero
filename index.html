@@ -56,7 +56,6 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#dce5ed;color:#1118
 <script type="module">
 import * as THREE from 'three';
 
-// SCENE
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x080d12);
 scene.fog = new THREE.FogExp2(0x080d12, 0.018);
@@ -82,7 +81,6 @@ camera.add(beam.target);
 beam.target.position.set(0,-0.1,-1);
 scene.add(camera);
 
-// MATERIALS
 const mat={
  floor:new THREE.MeshStandardMaterial({color:0x30383d,roughness:0.95}),
  wall:new THREE.MeshStandardMaterial({color:0x59636b,roughness:0.95}),
@@ -98,13 +96,18 @@ const mat={
 
 function box(name,x,y,z,sx,sy,sz,material){
  const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
- m.name=name;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;
- scene.add(m);return m;
+ m.name=name;
+ m.position.set(x,y,z);
+ m.castShadow=true;
+ m.receiveShadow=true;
+ scene.add(m);
+ return m;
 }
 
 function lamp(x,z,power=3.5){
  const light=new THREE.PointLight(0x9aabba,power,6,2);
- light.position.set(x,3.35,z);scene.add(light);
+ light.position.set(x,3.35,z);
+ scene.add(light);
  box('Ceiling lamp',x,3.68,z,0.7,0.045,0.25,mat.light);
  return light;
 }
@@ -115,7 +118,6 @@ box('Patient room ceiling',0,3.8,0,10,0.2,12,mat.dark);
 box('Back wall',0,1.8,-6,10,3.8,0.2,mat.wall);
 box('Left wall',-5,1.8,0,0.2,3.8,12,mat.wall);
 box('Right wall',5,1.8,0,0.2,3.8,12,mat.wall);
-// Front wall sections leave an opening into the corridor.
 box('Front left wall',-3.45,1.8,6,3.1,3.8,0.2,mat.wall);
 box('Front right wall',3.45,1.8,6,3.1,3.8,0.2,mat.wall);
 box('Front header',0,3.55,6,3.8,0.5,0.2,mat.wall);
@@ -167,40 +169,38 @@ for(const [y,w] of [[1.75,0.28],[1.65,0.22],[1.55,0.25]])
 
 lamp(0,-1.5,8);
 
-// LONG MAIN CORRIDOR
-// The corridor joins the open doorway at z=6 and extends to z=32.
+// MAIN CORRIDOR
 box('Corridor floor',0,-0.13,19,4.2,0.24,26,mat.floor);
 box('Corridor ceiling',0,3.8,19,4.2,0.2,26,mat.dark);
 
-// Continuous side walls. Openings are created for side-room entrances.
 for(const [z,len] of [[7.5,3],[12.2,4.4],[17.7,3.4],[23.2,4.2],[29.2,5.6]]){
  box('Left corridor wall',-2.1,1.8,z,0.2,3.8,len,mat.wall);
  box('Right corridor wall',2.1,1.8,z,0.2,3.8,len,mat.wall);
 }
 
-// Side rooms have their own floor, ceiling, outer wall and back wall.
-// Their open entrances face the main corridor.
+// SIDE ROOMS
 function sideRoom(side,z,name){
  const cx=side*4.3, outer=side*6.4;
  box(name+' floor',cx,-0.13,z,4.2,0.24,4.8,mat.floor);
  box(name+' ceiling',cx,3.8,z,4.2,0.2,4.8,mat.dark);
  box(name+' outer wall',outer,1.8,z,0.2,3.8,4.8,mat.wall);
  box(name+' back wall',cx,1.8,z+2.4,4.2,3.8,0.2,mat.wall);
- // Two wall sections leave a doorway facing the corridor.
+
+ // The entrance is open between z-0.9 and z+0.9.
+ // Wall sections stay on either side of the opening.
  box(name+' entrance wall A',side*2.25,1.8,z-1.65,0.2,3.8,1.5,mat.wall);
  box(name+' entrance wall B',side*2.25,1.8,z+1.65,0.2,3.8,1.5,mat.wall);
+
  box(name+' bed frame',cx,0.55,z+0.2,1.25,0.16,2.1,mat.metal);
  box(name+' mattress',cx,0.68,z+0.2,1.16,0.16,1.98,mat.bed);
  box(name+' cabinet',cx-side*1.25,0.55,z-1,0.6,1,0.6,mat.dark);
  box(name+' wall panel',side*6.28,2.2,z-1,0.035,0.65,0.85,mat.black);
  lamp(cx,z-1.3,1.7);
 }
-
 sideRoom(-1,10,'PATIENT ROOM 02');
 sideRoom(1,16,'TREATMENT ROOM');
 sideRoom(-1,22,'STORAGE ROOM');
 
-// More corridor details: rails, signs and scattered medical equipment.
 for(const z of [9,14,20,26,31]){
  box('Left wall handrail',-1.97,0.95,z,0.045,0.08,1.5,mat.metal);
  box('Right wall handrail',1.97,0.95,z,0.045,0.08,1.5,mat.metal);
@@ -210,9 +210,7 @@ box('Trolley wheel',0.4,0.12,13.2,0.13,0.13,0.13,mat.black);
 box('Broken chair seat',-0.5,0.3,24.7,0.65,0.12,0.65,mat.dark);
 box('Broken chair back',-0.5,0.6,25,0.65,0.55,0.1,mat.dark);
 
-for(const z of [8.2,13.5,19,25,30.5]){
- lamp(0,z,3.2);
-}
+for(const z of [8.2,13.5,19,25,30.5])lamp(0,z,3.2);
 box('Room sign 02',-1.98,2.65,8.9,0.035,0.3,0.9,mat.red);
 box('Treatment sign',1.98,2.65,14.6,0.035,0.3,1.15,mat.red);
 box('Storage sign',-1.98,2.65,20.6,0.035,0.3,0.85,mat.red);
@@ -225,7 +223,7 @@ const hint=document.getElementById('hint');
 const overlay=document.getElementById('overlay');
 const lightState=document.getElementById('lightState');
 
-// COLLECTIBLE FLASHLIGHT ON THE CABINET
+// FLASHLIGHT PICKUP
 const flashlightItem=new THREE.Group();
 const flashlightBody=new THREE.Mesh(
  new THREE.CylinderGeometry(0.065,0.085,0.42,12),
@@ -292,7 +290,6 @@ document.addEventListener('mousemove',e=>{
  pitch=Math.max(-1.35,Math.min(1.35,pitch-e.movementY*0.0022));
  updateCamera();
 });
-
 document.addEventListener('keydown',e=>{
  keys[e.code]=true;
  if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code))e.preventDefault();
@@ -306,32 +303,64 @@ document.addEventListener('pointerlockchange',()=>{
   hint.textContent='Click the game to resume mouse-look.';
 });
 
-// BASIC COLLISION: prevent walking through corridor walls and closed ends.
+// COLLISION FIX: TEST THE NEXT POSITION AND ALLOW ROOM ENTRANCES
 function movePlayer(dt,gx=0,gy=0){
  let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-gy;
  let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+gx;
  const len=Math.hypot(f,s);
  if(len>1){f/=len;s/=len;}
- const speed=player.speed*((keys.ShiftLeft||keys.ShiftRight)?1.65:1)*dt;
- const nx=player.x+(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed;
- const nz=player.z+(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
 
- // Patient room boundaries; front doorway is left open in the middle.
- if(nz<5.65){
-  player.x=Math.max(-4.35,Math.min(4.35,nx));
-  player.z=Math.max(-5.35,Math.min(5.65,nz));
- }else{
-  player.z=Math.max(5.65,Math.min(31.7,nz));
-  // Side rooms extend to the left/right of the corridor.
-  const inLeftRoom=(player.z>7.6&&player.z<12.4&&nx< -2.1)||
-   (player.z>19.6&&player.z<24.4&&nx< -2.1);
-  const inRightRoom=player.z>13.6&&player.z<18.4&&nx>2.1;
-  if(inLeftRoom||inRightRoom){
-   player.x=Math.max(-6.1,Math.min(6.1,nx));
-  }else{
-   player.x=Math.max(-1.72,Math.min(1.72,nx));
-  }
+ const speed=player.speed*((keys.ShiftLeft||keys.ShiftRight)?1.65:1)*dt;
+ const dx=(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed;
+ const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
+
+ // Resolve movement separately on each axis so a wall
+ // cannot trap the player when approaching a doorway.
+ let nx=player.x+dx;
+ let nz=player.z;
+
+ function isRoomOpening(z){
+  return (z>=8.9&&z<=11.1) ||
+         (z>=14.9&&z<=17.1) ||
+         (z>=20.9&&z<=23.1);
  }
+
+ function canOccupy(x,z){
+  // Starting room
+  if(z<5.8){
+   return x>=-4.55&&x<=4.55&&z>=-5.45;
+  }
+
+  // Main corridor limits, except at a side-room doorway.
+  if(z>=5.8&&z<=31.7){
+   if(x>=-1.78&&x<=1.78)return true;
+
+   // Patient Room 02 and Storage Room on the left.
+   if(x< -1.78 && x>=-6.0){
+    return (z>=8.85&&z<=11.15) ||
+           (z>=20.85&&z<=23.15);
+   }
+
+   // Treatment Room on the right.
+   if(x>1.78&&x<=6.0){
+    return z>=14.85&&z<=17.15;
+   }
+  }
+
+  return false;
+ }
+
+ // Move horizontally first, then forward/backward.
+ if(canOccupy(nx,player.z))player.x=nx;
+
+ nx=player.x;
+ nz=player.z+dz;
+ if(canOccupy(nx,nz))player.z=nz;
+
+ // Keep the player within the starting room and connected spaces.
+ player.x=Math.max(-6.0,Math.min(6.0,player.x));
+ player.z=Math.max(-5.45,Math.min(31.7,player.z));
+
  updateCamera();
 }
 
