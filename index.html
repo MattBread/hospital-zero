@@ -320,31 +320,149 @@ box('Storage supply box',-5.2,2.35,22.7,0.5,0.4,0.4,mat.paper);
 makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
 makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
 
-// PHASE 1: OUTDOOR EXPLORATION
-box('Outdoor ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
-box('Road',0,-0.13,-35,7,0.08,58,mat.asphalt);
-for(let z=-10;z>=-60;z-=5)box('Road centre marking',0,-0.075,z,0.12,0.025,2.1,mat.warning);
 
+ // PHASE 1: OUTDOOR FOREST EXPLORATION
+box('Forest ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
+
+// Forest floor patches using existing materials
+const forestSoil = new THREE.MeshStandardMaterial({color:0x292c22, roughness:1});
+const mossMat = new THREE.MeshStandardMaterial({color:0x35402a, roughness:1});
+const grassMats = [
+ new THREE.MeshStandardMaterial({color:0x3e4930, roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x596044, roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x252f22, roughness:1})
+];
+
+function forestPatch(x,z,w,d,material){
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,0.035,d),material);
+ mesh.position.set(x,-0.125,z);
+ mesh.receiveShadow=true;
+ scene.add(mesh);
+}
+for(let i=0;i<65;i++){
+ const x=(Math.random()-0.5)*43;
+ const z=-8-Math.random()*54;
+ forestPatch(x,z,1+Math.random()*3,1+Math.random()*3,
+  Math.random()<0.5?forestSoil:mossMat);
+}
+
+// Dense irregular tree trunks and layered leafy crowns
+const barkMat = new THREE.MeshStandardMaterial({color:0x403329,roughness:1});
+const barkLight = new THREE.MeshStandardMaterial({color:0x594536,roughness:1});
+const leafMats = [
+ new THREE.MeshStandardMaterial({color:0x182b20,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x243b29,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x31472f,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x1b3025,roughness:1})
+];
+
+function makeForestTree(x,z,h,r=0.35){
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(r*0.72,r,h,7),
+  Math.random()<0.5?barkMat:barkLight
+ );
+ trunk.position.set(x,h*0.5,z);
+ trunk.castShadow=true;
+ trunk.receiveShadow=true;
+ scene.add(trunk);
+
+ // Three overlapping irregular foliage masses
+ for(let i=0;i<3;i++){
+  const radius=h*(0.22+Math.random()*0.07);
+  const crown=new THREE.Mesh(
+   new THREE.IcosahedronGeometry(radius,1),
+   leafMats[Math.floor(Math.random()*leafMats.length)]
+  );
+  crown.position.set(
+   x+(Math.random()-0.5)*h*0.15,
+   h*(0.58+i*0.14),
+   z+(Math.random()-0.5)*h*0.15
+  );
+  crown.scale.set(1.15,1.1,1.05);
+  crown.castShadow=true;
+  scene.add(crown);
+ }
+
+ // Low branch stubs
+ for(let b=0;b<2;b++){
+  const branch=new THREE.Mesh(
+   new THREE.CylinderGeometry(0.035,0.07,h*0.24,5),
+   barkMat
+  );
+  branch.position.set(x+(b===0?-1:1)*h*0.14,h*0.62,z);
+  branch.rotation.z=b===0?-0.8:0.8;
+  scene.add(branch);
+ }
+}
+
+// Tree line along both sides, with varied heights and spacing
 for(const side of [-1,1]){
- box('Perimeter fence rail',side*23,1.1,-35,0.15,0.15,58,mat.fence);
- box('Perimeter fence top rail',side*23,2.1,-35,0.15,0.12,58,mat.fence);
- for(let z=-7;z>=-63;z-=2.5)box('Perimeter fence post',side*23,1.05,z,0.14,2.1,0.14,mat.fence);
-}
-box('Front fence left',-13,1.05,-7.5,20,2.1,0.14,mat.fence);
-box('Front fence right',13,1.05,-7.5,20,2.1,0.14,mat.fence);
-for(let x=-22;x<=22;x+=2.5){
- if(Math.abs(x)>2.2)box('Front fence post',x,1.05,-7.5,0.14,2.1,0.14,mat.fence);
+ for(let z=-9;z>=-63;z-=3.1+Math.random()*2.5){
+  makeForestTree(
+   side*(13+Math.random()*10),
+   z+(Math.random()-0.5)*2,
+   5.5+Math.random()*4.5,
+   0.28+Math.random()*0.25
+  );
+ }
 }
 
-function makeTree(x,z,h=4){
- box('Dead tree trunk',x,h*0.28,z,0.35,h*0.58,0.35,mat.crate);
- const crown=new THREE.Mesh(new THREE.ConeGeometry(h*0.48,h*0.9,7),mat.foliage);
- crown.position.set(x,h*0.78,z);
- crown.castShadow=true;
- scene.add(crown);
+// Extra trees deeper in the forest
+for(let i=0;i<38;i++){
+ const x=(Math.random()<0.5?-1:1)*(5+Math.random()*19);
+ const z=-12-Math.random()*49;
+ makeForestTree(x,z,4.5+Math.random()*5,0.22+Math.random()*0.2);
 }
-for(const [x,z,h] of [[-15,-15,4.5],[15,-18,5],[-18,-30,5.5],[18,-34,4.2],[-14,-44,5],[14,-48,5.2],[-20,-56,4.5],[20,-58,5]])makeTree(x,z,h);
 
+// Grass clumps
+function makeGrass(x,z){
+ for(let i=0;i<5;i++){
+  const blade=new THREE.Mesh(
+   new THREE.ConeGeometry(0.09,0.45+Math.random()*0.35,4),
+   grassMats[Math.floor(Math.random()*grassMats.length)]
+  );
+  blade.position.set(x+(Math.random()-0.5)*0.45,0.05,z+(Math.random()-0.5)*0.45);
+  blade.rotation.z=(Math.random()-0.5)*0.55;
+  scene.add(blade);
+ }
+}
+for(let i=0;i<190;i++){
+ makeGrass((Math.random()-0.5)*43,-8-Math.random()*54);
+}
+
+// Bushes
+const bushMat=new THREE.MeshStandardMaterial({color:0x263a26,roughness:1});
+function makeBush(x,z){
+ for(let i=0;i<4;i++){
+  const bush=new THREE.Mesh(
+   new THREE.IcosahedronGeometry(0.35+Math.random()*0.3,1),
+   bushMat
+  );
+  bush.position.set(x+(Math.random()-0.5)*0.8,0.25+Math.random()*0.2,z+(Math.random()-0.5)*0.8);
+  bush.castShadow=true;
+  scene.add(bush);
+ }
+}
+for(let i=0;i<35;i++){
+ makeBush((Math.random()-0.5)*40,-9-Math.random()*52);
+}
+
+// Mossy rocks
+const rockMat=new THREE.MeshStandardMaterial({color:0x55564b,roughness:1});
+const rockMoss=new THREE.MeshStandardMaterial({color:0x3c4932,roughness:1});
+for(let i=0;i<32;i++){
+ const rock=new THREE.Mesh(
+  new THREE.DodecahedronGeometry(0.3+Math.random()*0.75,0),
+  Math.random()<0.5?rockMat:rockMoss
+ );
+ rock.position.set((Math.random()-0.5)*42,0.02,-9-Math.random()*52);
+ rock.scale.y=0.5+Math.random()*0.45;
+ rock.rotation.set(Math.random(),Math.random()*3,Math.random());
+ rock.castShadow=true;
+ scene.add(rock);
+}
+
+// Keep the abandoned vehicles as environmental details
 function makeAbandonedCar(x,z,rotation=0){
  const car=box('Abandoned vehicle body',x,0.72,z,2.1,0.85,4.1,mat.dark);
  car.rotation.y=rotation;
@@ -359,6 +477,7 @@ function makeAbandonedCar(x,z,rotation=0){
 }
 makeAbandonedCar(-6,-16,0.2);
 makeAbandonedCar(8,-28,-0.3);
+
 
 // GUARD SHACK
 box('Guard shack floor',-9,0.05,-10,4.8,0.15,4.5,mat.concrete);
