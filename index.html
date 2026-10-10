@@ -321,102 +321,53 @@ makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
 makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
 
 // OUTDOOR FOREST
+const oceanMat = new THREE.MeshStandardMaterial({color:0x123d59,roughness:0.25,metalness:0.35});
+const beachMat = new THREE.MeshStandardMaterial({color:0x9b8a62,roughness:1});
 
-const oceanMat = new THREE.MeshStandardMaterial({
-  color: 0x123d59,
-  roughness: 0.25,
-  metalness: 0.35
-});
-
-const beachMat = new THREE.MeshStandardMaterial({
-  color: 0x9b8a62,
-  roughness: 1
-});
-
-// Deep ocean surrounding the island
-const ocean = new THREE.Mesh(
-  new THREE.PlaneGeometry(2000, 2000),
-  oceanMat
-);
-ocean.rotation.x = -Math.PI / 2;
-ocean.position.set(0, -0.48, -35);
+const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),oceanMat);
+ocean.rotation.x=-Math.PI/2;
+ocean.position.set(0,-0.48,-35);
 scene.add(ocean);
 
-// A second distant ocean surface for a continuous horizon
-const distantWater = new THREE.Mesh(
-  new THREE.PlaneGeometry(4000, 4000),
-  oceanMat
-);
-distantWater.rotation.x = -Math.PI / 2;
-distantWater.position.set(0, -0.52, -35);
+const distantWater = new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),oceanMat);
+distantWater.rotation.x=-Math.PI/2;
+distantWater.position.set(0,-0.52,-35);
 scene.add(distantWater);
 
-// Sandy shoreline around the island
-const beach = new THREE.Mesh(
-  new THREE.CircleGeometry(1, 96),
-  beachMat
-);
-beach.rotation.x = -Math.PI / 2;
-beach.scale.set(64, 73, 1);
-beach.position.set(0, -0.24, -35);
+const beach = new THREE.Mesh(new THREE.CircleGeometry(1,96),beachMat);
+beach.rotation.x=-Math.PI/2;
+beach.scale.set(64,73,1);
+beach.position.set(0,-0.24,-35);
 scene.add(beach);
 
-// Main island land, preserving the forest terrain
-const islandGround = new THREE.Mesh(
-  new THREE.CircleGeometry(1, 96),
-  mat.outdoorFloor
-);
-islandGround.rotation.x = -Math.PI / 2;
-islandGround.scale.set(60, 69, 1);
-islandGround.position.set(0, -0.10, -35);
-islandGround.receiveShadow = true;
+const islandGround = new THREE.Mesh(new THREE.CircleGeometry(1,96),mat.outdoorFloor);
+islandGround.rotation.x=-Math.PI/2;
+islandGround.scale.set(60,69,1);
+islandGround.position.set(0,-0.10,-35);
+islandGround.receiveShadow=true;
 scene.add(islandGround);
 
-// Jagged rocks along the coast
-const shoreRockMat = new THREE.MeshStandardMaterial({
-  color: 0x454943,
-  roughness: 1
-});
-
-for (let i = 0; i < 100; i++) {
-  const angle = Math.random() * Math.PI * 2;
-  const radius = 61 + Math.random() * 4;
-  const rock = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(
-      0.5 + Math.random() * 1.5,
-      0
-    ),
-    shoreRockMat
-  );
-
-  rock.position.set(
-    Math.cos(angle) * radius,
-    -0.05 + Math.random() * 0.15,
-    -35 + Math.sin(angle) * radius * 1.15
-  );
-
-  rock.scale.y = 0.5 + Math.random();
-  rock.rotation.set(
-    Math.random(),
-    Math.random(),
-    Math.random()
-  );
-
-  scene.add(rock);
+const shoreRockMat = new THREE.MeshStandardMaterial({color:0x454943,roughness:1});
+for(let i=0;i<100;i++){
+ const angle=Math.random()*Math.PI*2;
+ const radius=61+Math.random()*4;
+ const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+Math.random()*1.5,0),shoreRockMat);
+ rock.position.set(Math.cos(angle)*radius,-0.05+Math.random()*0.15,-35+Math.sin(angle)*radius*1.15);
+ rock.scale.y=0.5+Math.random();
+ rock.rotation.set(Math.random(),Math.random(),Math.random());
+ scene.add(rock);
 }
 
-const oceanSurfaces = [ocean, distantWater];
+const oceanSurfaces=[ocean,distantWater];
+box('Forest ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
 
-box('Forest ground', 0, -0.28, -35, 58, 0.25, 62, mat.outdoorFloor);
-
-const forestSoil = new THREE.MeshStandardMaterial({color:0x292c22, roughness:1});
-const mossMat = new THREE.MeshStandardMaterial({color:0x35402a, roughness:1});
-const grassMats = [
- new THREE.MeshStandardMaterial({color:0x3e4930, roughness:1}),
- new THREE.MeshStandardMaterial({color:0x596044, roughness:1}),
- new THREE.MeshStandardMaterial({color:0x252f22, roughness:1})
+const forestSoil=new THREE.MeshStandardMaterial({color:0x292c22,roughness:1});
+const mossMat=new THREE.MeshStandardMaterial({color:0x35402a,roughness:1});
+const grassMats=[
+ new THREE.MeshStandardMaterial({color:0x3e4930,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x596044,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x252f22,roughness:1})
 ];
-
 function forestPatch(x,z,w,d,material){
  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,0.035,d),material);
  mesh.position.set(x,-0.125,z);
@@ -426,30 +377,26 @@ function forestPatch(x,z,w,d,material){
 for(let i=0;i<65;i++){
  const x=(Math.random()-0.5)*43;
  const z=-8-Math.random()*54;
- forestPatch(x,z,1+Math.random()*3,1+Math.random()*3,
-  Math.random()<0.5?forestSoil:mossMat);
+ forestPatch(x,z,1+Math.random()*3,1+Math.random()*3,Math.random()<0.5?forestSoil:mossMat);
 }
 
-const barkMat = new THREE.MeshStandardMaterial({color:0x403329,roughness:1});
-const barkLight = new THREE.MeshStandardMaterial({color:0x594536,roughness:1});
-const leafMats = [
+const barkMat=new THREE.MeshStandardMaterial({color:0x403329,roughness:1});
+const barkLight=new THREE.MeshStandardMaterial({color:0x594536,roughness:1});
+const leafMats=[
  new THREE.MeshStandardMaterial({color:0x182b20,roughness:1}),
  new THREE.MeshStandardMaterial({color:0x243b29,roughness:1}),
  new THREE.MeshStandardMaterial({color:0x31472f,roughness:1}),
  new THREE.MeshStandardMaterial({color:0x1b3025,roughness:1})
 ];
-
 function makeForestTree(x,z,h,r=0.35){
- const trunk=new THREE.Mesh(new THREE.CylinderGeometry(r*0.72,r,h,7),
-  Math.random()<0.5?barkMat:barkLight);
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(r*0.72,r,h,7),Math.random()<0.5?barkMat:barkLight);
  trunk.position.set(x,h*0.5,z);
  trunk.castShadow=true;
  trunk.receiveShadow=true;
  scene.add(trunk);
  for(let i=0;i<3;i++){
   const radius=h*(0.22+Math.random()*0.07);
-  const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(radius,1),
-   leafMats[Math.floor(Math.random()*leafMats.length)]);
+  const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(radius,1),leafMats[Math.floor(Math.random()*leafMats.length)]);
   crown.position.set(x+(Math.random()-0.5)*h*0.15,h*(0.58+i*0.14),z+(Math.random()-0.5)*h*0.15);
   crown.scale.set(1.15,1.1,1.05);
   crown.castShadow=true;
@@ -464,8 +411,7 @@ function makeForestTree(x,z,h,r=0.35){
 }
 for(const side of [-1,1]){
  for(let z=-9;z>=-63;z-=3.1+Math.random()*2.5){
-  makeForestTree(side*(13+Math.random()*10),z+(Math.random()-0.5)*2,
-   5.5+Math.random()*4.5,0.28+Math.random()*0.25);
+  makeForestTree(side*(13+Math.random()*10),z+(Math.random()-0.5)*2,5.5+Math.random()*4.5,0.28+Math.random()*0.25);
  }
 }
 for(let i=0;i<38;i++){
@@ -473,11 +419,9 @@ for(let i=0;i<38;i++){
  const z=-12-Math.random()*49;
  makeForestTree(x,z,4.5+Math.random()*5,0.22+Math.random()*0.2);
 }
-
 function makeGrass(x,z){
  for(let i=0;i<5;i++){
-  const blade=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.45+Math.random()*0.35,4),
-   grassMats[Math.floor(Math.random()*grassMats.length)]);
+  const blade=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.45+Math.random()*0.35,4),grassMats[Math.floor(Math.random()*grassMats.length)]);
   blade.position.set(x+(Math.random()-0.5)*0.45,0.05,z+(Math.random()-0.5)*0.45);
   blade.rotation.z=(Math.random()-0.5)*0.55;
   scene.add(blade);
@@ -499,15 +443,13 @@ for(let i=0;i<35;i++)makeBush((Math.random()-0.5)*40,-9-Math.random()*52);
 const rockMat=new THREE.MeshStandardMaterial({color:0x55564b,roughness:1});
 const rockMoss=new THREE.MeshStandardMaterial({color:0x3c4932,roughness:1});
 for(let i=0;i<32;i++){
- const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.3+Math.random()*0.75,0),
-  Math.random()<0.5?rockMat:rockMoss);
+ const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.3+Math.random()*0.75,0),Math.random()<0.5?rockMat:rockMoss);
  rock.position.set((Math.random()-0.5)*42,0.02,-9-Math.random()*52);
  rock.scale.y=0.5+Math.random()*0.45;
  rock.rotation.set(Math.random(),Math.random()*3,Math.random());
  rock.castShadow=true;
  scene.add(rock);
 }
-
 function makeAbandonedCar(x,z,rotation=0){
  const car=box('Abandoned vehicle body',x,0.72,z,2.1,0.85,4.1,mat.dark);
  car.rotation.y=rotation;
@@ -543,7 +485,6 @@ for(const x of [-6,-3,0,3,6])box('Prison entrance pillar',x,2,-54.9,0.25,4,0.25,
 box('Prison entrance',0,1.6,-54.8,2,3.2,0.12,mat.black);
 
 // MAINTENANCE BUILDING EXPANSION
-// It is in the forest to the east, with an open entrance on the south side.
 const maintenanceInside=new THREE.MeshStandardMaterial({color:0x353f40,roughness:1});
 box('Maintenance building foundation',12,0.02,-37,12,0.22,10,mat.concrete);
 box('Maintenance building back wall',12,1.8,-42,12,3.6,0.25,mat.dark);
@@ -565,7 +506,6 @@ box('Maintenance ceiling light',12,3.48,-37,1.2,0.05,0.28,mat.light);
 box('Maintenance workbench',9.1,0.8,-39,3.1,0.18,0.9,mat.metal);
 box('Maintenance workbench legs',8,0.4,-39,0.12,0.8,0.12,mat.dark);
 box('Maintenance toolbox',9,1.18,-39,0.75,0.55,0.55,mat.red);
-
 box('Maintenance shelf',15.5,1.65,-39,0.3,2.8,3.5,mat.metal);
 box('Maintenance shelf upper',15.2,2.75,-39,0.8,0.08,3.5,mat.metal);
 box('Maintenance shelf lower',15.2,0.95,-39,0.8,0.08,3.5,mat.metal);
@@ -575,30 +515,23 @@ makeSupplyCrate(14.7,-36.8,0.55);
 box('Maintenance generator',11.7,0.72,-34.6,1.35,1.35,0.9,mat.dark);
 box('Generator control panel',11.7,0.95,-34.12,0.7,0.42,0.05,mat.black);
 box('Generator warning light',11.7,1.04,-34.08,0.12,0.08,0.025,mat.red);
-
 box('Maintenance locker',7.4,1.05,-35.3,0.75,2.1,0.8,mat.dark);
 box('Maintenance locker handle',7.4,1.1,-34.87,0.08,0.22,0.04,mat.metal);
 box('Maintenance pipe horizontal',12,2.65,-41.55,7.5,0.14,0.14,mat.metal);
 for(const x of [9,12,15])box('Maintenance pipe bracket',x,2.48,-41.55,0.12,0.38,0.2,mat.dark);
 
-// Items to discover inside the maintenance building.
-const fuseItem=box('Loose fuse',9.1,1.03,-39,0.22,0.08,0.12,
- new THREE.MeshStandardMaterial({color:0xf0d77b,emissive:0x5b4510}));
+const fuseItem=box('Loose fuse',9.1,1.03,-39,0.22,0.08,0.12,new THREE.MeshStandardMaterial({color:0xf0d77b,emissive:0x5b4510}));
 const logbookItem=box('Maintenance logbook',15.15,1.08,-39,0.38,0.06,0.28,mat.paper);
 const photographItem=box('Old photograph',7.4,1.4,-35.3,0.18,0.02,0.24,mat.paper);
-const maintenanceKeyItem=box('Rusty maintenance key',11.7,1.47,-34.6,0.3,0.045,0.09,
- new THREE.MeshStandardMaterial({color:0xc0a36a,metalness:0.65,roughness:0.35}));
+const maintenanceKeyItem=box('Rusty maintenance key',11.7,1.47,-34.6,0.3,0.045,0.09,new THREE.MeshStandardMaterial({color:0xc0a36a,metalness:0.65,roughness:0.35}));
 const noteItem=box('Ranger note',12,0.25,-30.5,0.42,0.025,0.32,mat.paper);
 
 let fuseFound=false,logbookFound=false,photoFound=false,maintenanceKeyFound=false,noteFound=false,generatorStarted=false;
 
 // KEYCARD IN THE STORAGE ROOM
-const keycard=box('Security keycard',-4.9,1.12,22.35,0.28,0.035,0.18,
- new THREE.MeshStandardMaterial({color:0x7fd8dc,emissive:0x15383a,metalness:0.25,roughness:0.35}));
-const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,0.19,0.012,0.025,
- new THREE.MeshBasicMaterial({color:0xf3fbff}));
+const keycard=box('Security keycard',-4.9,1.12,22.35,0.28,0.035,0.18,new THREE.MeshStandardMaterial({color:0x7fd8dc,emissive:0x15383a,metalness:0.25,roughness:0.35}));
+const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,0.19,0.012,0.025,new THREE.MeshBasicMaterial({color:0xf3fbff}));
 
-// PLAYER AND HUD
 const keys={};
 let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,keycardCollected=false,exitUnlocked=false,started=false,lastPadButton=false;
 const player={x:0,z:4.7,speed:2.7};
@@ -606,18 +539,11 @@ const hint=document.getElementById('hint');
 const overlay=document.getElementById('overlay');
 const lightState=document.getElementById('lightState');
 
-// FLASHLIGHT PICKUP
 const flashlightItem=new THREE.Group();
-const flashlightBody=new THREE.Mesh(
- new THREE.CylinderGeometry(0.065,0.085,0.42,12),
- new THREE.MeshStandardMaterial({color:0x252b30,metalness:0.8,roughness:0.3})
-);
+const flashlightBody=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.085,0.42,12),new THREE.MeshStandardMaterial({color:0x252b30,metalness:0.8,roughness:0.3}));
 flashlightBody.rotation.x=Math.PI/2;
 flashlightItem.add(flashlightBody);
-const lens=new THREE.Mesh(
- new THREE.CircleGeometry(0.065,12),
- new THREE.MeshStandardMaterial({color:0xffe9a6,emissive:0x665020})
-);
+const lens=new THREE.Mesh(new THREE.CircleGeometry(0.065,12),new THREE.MeshStandardMaterial({color:0xffe9a6,emissive:0x665020}));
 lens.position.z=-0.215;
 flashlightItem.add(lens);
 flashlightItem.position.set(-3.7,1.18,-3.1);
@@ -630,12 +556,8 @@ function updateCamera(){
  camera.rotation.x=pitch;
  camera.position.set(player.x,1.65,player.z);
 }
-
 function toggleFlashlight(){
- if(!flashlightCollected){
-  hint.textContent='Find the flashlight on the cabinet first.';
-  return;
- }
+ if(!flashlightCollected){hint.textContent='Find the flashlight on the cabinet first.';return;}
  flashlightOn=!flashlightOn;
  beam.intensity=flashlightOn?38:0;
  lightState.textContent=flashlightOn?'ON':'OFF';
@@ -644,93 +566,29 @@ function toggleFlashlight(){
 
 function tryInteract(){
  if(!started)return;
-
- // MAINTENANCE BUILDING INTERACTIONS
  const near=(obj,r=1.8)=>Math.hypot(player.x-obj.position.x,player.z-obj.position.z)<r;
-
- if(!fuseFound&&near(fuseItem)){
-  fuseFound=true;
-  scene.remove(fuseItem);
-  hint.textContent='You found a spare fuse. The generator may need it.';
-  return;
- }
- if(!logbookFound&&near(logbookItem)){
-  logbookFound=true;
-  scene.remove(logbookItem);
-  hint.textContent='Maintenance log: “Power failed after the lower ward was sealed. Do not restore it alone.”';
-  return;
- }
- if(!photoFound&&near(photographItem)){
-  photoFound=true;
-  scene.remove(photographItem);
-  hint.textContent='An old photograph shows hospital staff beside a forest access gate. One face has been scratched out.';
-  return;
- }
- if(!maintenanceKeyFound&&near(maintenanceKeyItem)){
-  maintenanceKeyFound=true;
-  scene.remove(maintenanceKeyItem);
-  hint.textContent='Rusty maintenance key acquired. There may be a locked service cabinet.';
-  return;
- }
- if(!noteFound&&near(noteItem)){
-  noteFound=true;
-  scene.remove(noteItem);
-  hint.textContent='Ranger note: “The prison lights still flicker after midnight. The hospital is not the only place abandoned.”';
-  return;
- }
+ if(!fuseFound&&near(fuseItem)){fuseFound=true;scene.remove(fuseItem);hint.textContent='You found a spare fuse. The generator may need it.';return;}
+ if(!logbookFound&&near(logbookItem)){logbookFound=true;scene.remove(logbookItem);hint.textContent='Maintenance log: “Power failed after the lower ward was sealed. Do not restore it alone.”';return;}
+ if(!photoFound&&near(photographItem)){photoFound=true;scene.remove(photographItem);hint.textContent='An old photograph shows hospital staff beside a forest access gate. One face has been scratched out.';return;}
+ if(!maintenanceKeyFound&&near(maintenanceKeyItem)){maintenanceKeyFound=true;scene.remove(maintenanceKeyItem);hint.textContent='Rusty maintenance key acquired. There may be a locked service cabinet.';return;}
+ if(!noteFound&&near(noteItem)){noteFound=true;scene.remove(noteItem);hint.textContent='Ranger note: “The prison lights still flicker after midnight. The hospital is not the only place abandoned.”';return;}
  if(Math.hypot(player.x-11.7,player.z+34.6)<2.2){
-  if(!fuseFound){
-   hint.textContent='The generator is missing a fuse. Search the workbench.';
-   return;
-  }
-  if(!generatorStarted){
-   generatorStarted=true;
-   maintenanceLamp.intensity=12;
-   hint.textContent='The generator coughs to life. Something deep in the forest answers with a distant metallic bang.';
-  }else{
-   hint.textContent='The generator is running, but you do not know what it powered.';
-  }
+  if(!fuseFound){hint.textContent='The generator is missing a fuse. Search the workbench.';return;}
+  if(!generatorStarted){generatorStarted=true;maintenanceLamp.intensity=12;hint.textContent='The generator coughs to life. Something deep in the forest answers with a distant metallic bang.';}
+  else hint.textContent='The generator is running, but you do not know what it powered.';
   return;
  }
-
- // ORIGINAL KEYCARD PICKUP
  const kd=Math.hypot(player.x-keycard.position.x,player.z-keycard.position.z);
- if(!keycardCollected&&kd<1.7){
-  keycardCollected=true;
-  scene.remove(keycard);
-  scene.remove(keycardMark);
-  document.getElementById('keyState').textContent='ACQUIRED';
-  hint.textContent='Security keycard acquired. Find the locked rear exit.';
-  return;
- }
-
- // ORIGINAL EXIT DOOR
+ if(!keycardCollected&&kd<1.7){keycardCollected=true;scene.remove(keycard);scene.remove(keycardMark);document.getElementById('keyState').textContent='ACQUIRED';hint.textContent='Security keycard acquired. Find the locked rear exit.';return;}
  if(Math.abs(player.x)<2.1&&Math.abs(player.z+5.2)<2.1){
-  if(!keycardCollected){
-   hint.textContent='ACCESS DENIED. Find the security keycard in the Storage Room.';
-   return;
-  }
-  if(!exitUnlocked){
-   exitUnlocked=true;
-   keypadLight.material=new THREE.MeshBasicMaterial({color:0x42ff9a});
-   exitDoor.position.x=2.5;
-   hint.textContent='ACCESS GRANTED. Exit unlocked. Head outside toward the road and prison.';
-  }else{
-   hint.textContent='The exit is unlocked. Head outside toward the road.';
-  }
+  if(!keycardCollected){hint.textContent='ACCESS DENIED. Find the security keycard in the Storage Room.';return;}
+  if(!exitUnlocked){exitUnlocked=true;keypadLight.material=new THREE.MeshBasicMaterial({color:0x42ff9a});exitDoor.position.x=2.5;hint.textContent='ACCESS GRANTED. Exit unlocked. Head outside toward the road and prison.';}
+  else hint.textContent='The exit is unlocked. Head outside toward the road.';
   return;
  }
-
- // ORIGINAL FLASHLIGHT PICKUP
  if(!flashlightCollected){
   const d=Math.hypot(player.x-flashlightItem.position.x,player.z-flashlightItem.position.z);
-  if(d<1.5){
-   flashlightCollected=true;
-   scene.remove(flashlightItem);
-   lightState.textContent='OFF';
-   hint.textContent='Flashlight acquired! Press F to turn it on.';
-   return;
-  }
+  if(d<1.5){flashlightCollected=true;scene.remove(flashlightItem);lightState.textContent='OFF';hint.textContent='Flashlight acquired! Press F to turn it on.';return;}
  }
  hint.textContent='Nothing nearby. Search the maintenance building for clues, a fuse, a key, and a logbook.';
 }
@@ -743,10 +601,7 @@ function startGame(){
  renderer.domElement.requestPointerLock?.();
 }
 document.getElementById('start').addEventListener('click',startGame);
-renderer.domElement.addEventListener('click',()=>{
- if(started&&document.pointerLockElement!==renderer.domElement)
-  renderer.domElement.requestPointerLock?.();
-});
+renderer.domElement.addEventListener('click',()=>{if(started&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.();});
 document.addEventListener('mousemove',e=>{
  if(!started||document.pointerLockElement!==renderer.domElement)return;
  yaw-=e.movementX*0.0022;
@@ -761,98 +616,70 @@ document.addEventListener('keydown',e=>{
  if(e.code==='Escape'&&started)hint.textContent='Click the game to resume mouse-look.';
 });
 document.addEventListener('keyup',e=>keys[e.code]=false);
-document.addEventListener('pointerlockchange',()=>{
- if(started&&document.pointerLockElement!==renderer.domElement)
-  hint.textContent='Click the game to resume mouse-look.';
-});
-
-
- // MOVEMENT AND ROOM ACCESS
+document.addEventListener('pointerlockchange',()=>{if(started&&document.pointerLockElement!==renderer.domElement)hint.textContent='Click the game to resume mouse-look.';});
 
 function movePlayer(dt,gx=0,gy=0){
  let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-gy;
  let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+gx;
  const len=Math.hypot(f,s);
  if(len>1){f/=len;s/=len;}
-
  const speed=player.speed*((keys.ShiftLeft||keys.ShiftRight)?1.65:1)*dt;
  const dx=(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed;
  const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
-
  function canOccupy(x,z){
-  // Hospital rooms and exit threshold
   if(z<5.8){
    if(z>=-5.45)return x>=-4.55&&x<=4.55;
    if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
   }
-
-  // Island surrounded by ocean
   if(z < -7.0){
    if(!exitUnlocked)return false;
    const islandX=x/58;
    const islandZ=(z+35)/66;
    return islandX*islandX+islandZ*islandZ<=1;
   }
-
-  // Main corridor and side-room openings
   if(z>=5.8&&z<=31.7){
    if(x>=-1.78&&x<=1.78)return true;
-   if(x< -1.78&&x>=-6.0){
-    return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
-   }
-   if(x>1.78&&x<=6.0){
-    return z>=14.85&&z<=17.15;
-   }
+   if(x< -1.78&&x>=-6.0)return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
+   if(x>1.78&&x<=6.0)return z>=14.85&&z<=17.15;
   }
-
   return false;
  }
-
  let nx=player.x+dx;
  if(canOccupy(nx,player.z))player.x=nx;
-
  nx=player.x;
  const nz=player.z+dz;
  if(canOccupy(nx,nz))player.z=nz;
-
  player.x=Math.max(exitUnlocked?-57:-6.0,Math.min(exitUnlocked?57:6.0,player.x));
  player.z=Math.max(exitUnlocked?-99.0:-5.45,Math.min(31.7,player.z));
  updateCamera();
 }
-
 function gamepadInput(dt){
  const pads=navigator.getGamepads?navigator.getGamepads():[];
  const pad=[...pads].find(Boolean);
  if(!pad)return false;
-
  const axis=i=>Math.abs(pad.axes[i]||0)>0.16?pad.axes[i]:0;
  yaw-=axis(2)*2.2*dt;
  pitch=Math.max(-1.35,Math.min(1.35,pitch+axis(3)*1.7*dt));
  movePlayer(dt,axis(0),axis(1));
-
  const pressed=!!pad.buttons[0]?.pressed;
  if(pressed&&!lastPadButton)toggleFlashlight();
  lastPadButton=pressed;
  return true;
 }
 
+const clock = new THREE.Clock();
 let elapsed=0;
 function animate(){
  requestAnimationFrame(animate);
  const dt=Math.min(clock.getDelta(),0.04);
  elapsed+=dt;
- oceanSurfaces.forEach((surface,i)=>{
-  surface.position.y=-0.48+Math.sin(elapsed*0.7+i)*0.025;
-}); 
- if(started){
-  if(!gamepadInput(dt))movePlayer(dt);
- }
+ oceanSurfaces.forEach((surface,i)=>{surface.position.y=-0.48+Math.sin(elapsed*0.7+i)*0.025;});
+ if(started){if(!gamepadInput(dt))movePlayer(dt);}
  mainLight.intensity=25+Math.sin(elapsed*7)*0.3;
  renderer.render(scene,camera);
 }
 updateCamera();
 animate();
-
 window.addEventListener('resize',()=>{
  camera.aspect=innerWidth/innerHeight;
  camera.updateProjectionMatrix();
