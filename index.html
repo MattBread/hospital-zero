@@ -31,7 +31,7 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
   <div id="title">HOSPITAL ZERO</div>
   <div id="credits">A game by Mxtt704<br>YouTube: Mxtt704<br>TikTok: Mxtt704</div>
   <div id="crosshair"></div>
-  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>KEYCARD: <span id="keyState">NOT FOUND</span><br>LOCATION: HOSPITAL<br>OBJECTIVE: Find a keycard and unlock the exit.</div>
+  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>KEYCARD: <span id="keyState">NOT FOUND</span><br>LOCATION: HOSPITAL<br>OBJECTIVE: Find the keycard, escape, and investigate the maintenance building.</div>
   <div id="hint">Enter the hospital when you are ready.</div>
 </div>
 <div id="overlay">
@@ -49,7 +49,7 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
       <b>ESC</b> — Release mouse<br>
       <b>GAMEPAD</b> — Left stick moves, right stick looks
     </div>
-    <div class="small">PROTOTYPE 03 · NO COMBAT · STAY QUIET</div>
+    <div class="small">PROTOTYPE 04 · EXPLORATION UPDATE</div>
   </div>
 </div>
 
@@ -320,11 +320,8 @@ box('Storage supply box',-5.2,2.35,22.7,0.5,0.4,0.4,mat.paper);
 makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
 makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
 
-
- // PHASE 1: OUTDOOR FOREST EXPLORATION
+// OUTDOOR FOREST
 box('Forest ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
-
-// Forest floor patches using existing materials
 const forestSoil = new THREE.MeshStandardMaterial({color:0x292c22, roughness:1});
 const mossMat = new THREE.MeshStandardMaterial({color:0x35402a, roughness:1});
 const grassMats = [
@@ -346,7 +343,6 @@ for(let i=0;i<65;i++){
   Math.random()<0.5?forestSoil:mossMat);
 }
 
-// Dense irregular tree trunks and layered leafy crowns
 const barkMat = new THREE.MeshStandardMaterial({color:0x403329,roughness:1});
 const barkLight = new THREE.MeshStandardMaterial({color:0x594536,roughness:1});
 const leafMats = [
@@ -357,104 +353,67 @@ const leafMats = [
 ];
 
 function makeForestTree(x,z,h,r=0.35){
- const trunk=new THREE.Mesh(
-  new THREE.CylinderGeometry(r*0.72,r,h,7),
-  Math.random()<0.5?barkMat:barkLight
- );
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(r*0.72,r,h,7),
+  Math.random()<0.5?barkMat:barkLight);
  trunk.position.set(x,h*0.5,z);
  trunk.castShadow=true;
  trunk.receiveShadow=true;
  scene.add(trunk);
-
- // Three overlapping irregular foliage masses
  for(let i=0;i<3;i++){
   const radius=h*(0.22+Math.random()*0.07);
-  const crown=new THREE.Mesh(
-   new THREE.IcosahedronGeometry(radius,1),
-   leafMats[Math.floor(Math.random()*leafMats.length)]
-  );
-  crown.position.set(
-   x+(Math.random()-0.5)*h*0.15,
-   h*(0.58+i*0.14),
-   z+(Math.random()-0.5)*h*0.15
-  );
+  const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(radius,1),
+   leafMats[Math.floor(Math.random()*leafMats.length)]);
+  crown.position.set(x+(Math.random()-0.5)*h*0.15,h*(0.58+i*0.14),z+(Math.random()-0.5)*h*0.15);
   crown.scale.set(1.15,1.1,1.05);
   crown.castShadow=true;
   scene.add(crown);
  }
-
- // Low branch stubs
  for(let b=0;b<2;b++){
-  const branch=new THREE.Mesh(
-   new THREE.CylinderGeometry(0.035,0.07,h*0.24,5),
-   barkMat
-  );
+  const branch=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.07,h*0.24,5),barkMat);
   branch.position.set(x+(b===0?-1:1)*h*0.14,h*0.62,z);
   branch.rotation.z=b===0?-0.8:0.8;
   scene.add(branch);
  }
 }
-
-// Tree line along both sides, with varied heights and spacing
 for(const side of [-1,1]){
  for(let z=-9;z>=-63;z-=3.1+Math.random()*2.5){
-  makeForestTree(
-   side*(13+Math.random()*10),
-   z+(Math.random()-0.5)*2,
-   5.5+Math.random()*4.5,
-   0.28+Math.random()*0.25
-  );
+  makeForestTree(side*(13+Math.random()*10),z+(Math.random()-0.5)*2,
+   5.5+Math.random()*4.5,0.28+Math.random()*0.25);
  }
 }
-
-// Extra trees deeper in the forest
 for(let i=0;i<38;i++){
  const x=(Math.random()<0.5?-1:1)*(5+Math.random()*19);
  const z=-12-Math.random()*49;
  makeForestTree(x,z,4.5+Math.random()*5,0.22+Math.random()*0.2);
 }
 
-// Grass clumps
 function makeGrass(x,z){
  for(let i=0;i<5;i++){
-  const blade=new THREE.Mesh(
-   new THREE.ConeGeometry(0.09,0.45+Math.random()*0.35,4),
-   grassMats[Math.floor(Math.random()*grassMats.length)]
-  );
+  const blade=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.45+Math.random()*0.35,4),
+   grassMats[Math.floor(Math.random()*grassMats.length)]);
   blade.position.set(x+(Math.random()-0.5)*0.45,0.05,z+(Math.random()-0.5)*0.45);
   blade.rotation.z=(Math.random()-0.5)*0.55;
   scene.add(blade);
  }
 }
-for(let i=0;i<190;i++){
- makeGrass((Math.random()-0.5)*43,-8-Math.random()*54);
-}
+for(let i=0;i<190;i++)makeGrass((Math.random()-0.5)*43,-8-Math.random()*54);
 
-// Bushes
 const bushMat=new THREE.MeshStandardMaterial({color:0x263a26,roughness:1});
 function makeBush(x,z){
  for(let i=0;i<4;i++){
-  const bush=new THREE.Mesh(
-   new THREE.IcosahedronGeometry(0.35+Math.random()*0.3,1),
-   bushMat
-  );
+  const bush=new THREE.Mesh(new THREE.IcosahedronGeometry(0.35+Math.random()*0.3,1),bushMat);
   bush.position.set(x+(Math.random()-0.5)*0.8,0.25+Math.random()*0.2,z+(Math.random()-0.5)*0.8);
   bush.castShadow=true;
   scene.add(bush);
  }
 }
-for(let i=0;i<35;i++){
- makeBush((Math.random()-0.5)*40,-9-Math.random()*52);
-}
+for(let i=0;i<35;i++)makeBush((Math.random()-0.5)*40,-9-Math.random()*52);
 
-// Mossy rocks
 const rockMat=new THREE.MeshStandardMaterial({color:0x55564b,roughness:1});
 const rockMoss=new THREE.MeshStandardMaterial({color:0x3c4932,roughness:1});
 for(let i=0;i<32;i++){
- const rock=new THREE.Mesh(
-  new THREE.DodecahedronGeometry(0.3+Math.random()*0.75,0),
-  Math.random()<0.5?rockMat:rockMoss
- );
+ const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.3+Math.random()*0.75,0),
+  Math.random()<0.5?rockMat:rockMoss);
  rock.position.set((Math.random()-0.5)*42,0.02,-9-Math.random()*52);
  rock.scale.y=0.5+Math.random()*0.45;
  rock.rotation.set(Math.random(),Math.random()*3,Math.random());
@@ -462,7 +421,6 @@ for(let i=0;i<32;i++){
  scene.add(rock);
 }
 
-// Keep the abandoned vehicles as environmental details
 function makeAbandonedCar(x,z,rotation=0){
  const car=box('Abandoned vehicle body',x,0.72,z,2.1,0.85,4.1,mat.dark);
  car.rotation.y=rotation;
@@ -477,7 +435,6 @@ function makeAbandonedCar(x,z,rotation=0){
 }
 makeAbandonedCar(-6,-16,0.2);
 makeAbandonedCar(8,-28,-0.3);
-
 
 // GUARD SHACK
 box('Guard shack floor',-9,0.05,-10,4.8,0.15,4.5,mat.concrete);
@@ -497,6 +454,56 @@ box('Prison roof',0,10.1,-58,19.4,0.3,5.4,mat.dark);
 for(let x=-8;x<=8;x+=2)box('Prison barred window',x,6,-55.42,0.9,1.2,0.04,mat.black);
 for(const x of [-6,-3,0,3,6])box('Prison entrance pillar',x,2,-54.9,0.25,4,0.25,mat.dark);
 box('Prison entrance',0,1.6,-54.8,2,3.2,0.12,mat.black);
+
+// MAINTENANCE BUILDING EXPANSION
+// It is in the forest to the east, with an open entrance on the south side.
+const maintenanceInside=new THREE.MeshStandardMaterial({color:0x353f40,roughness:1});
+box('Maintenance building foundation',12,0.02,-37,12,0.22,10,mat.concrete);
+box('Maintenance building back wall',12,1.8,-42,12,3.6,0.25,mat.dark);
+box('Maintenance building west wall',6,1.8,-37,0.25,3.6,10,mat.dark);
+box('Maintenance building east wall',18,1.8,-37,0.25,3.6,10,mat.dark);
+box('Maintenance front left wall',8.6,1.8,-32,5.2,3.6,0.25,mat.dark);
+box('Maintenance front right wall',15.4,1.8,-32,5.2,3.6,0.25,mat.dark);
+box('Maintenance front doorway header',12,3.25,-32,1.6,0.7,0.25,mat.dark);
+box('Maintenance roof',12,3.72,-37,12.3,0.22,10.3,mat.concrete);
+box('Maintenance sign board',12,2.85,-31.82,3.5,0.55,0.12,mat.warning);
+box('Maintenance sign lettering',12,2.86,-31.73,2.9,0.06,0.025,mat.black);
+box('Maintenance interior floor',12,0.16,-37,11.5,0.08,9.5,maintenanceInside);
+
+const maintenanceLamp=new THREE.PointLight(0x9bbac6,5,13,2);
+maintenanceLamp.position.set(12,3.05,-37);
+scene.add(maintenanceLamp);
+box('Maintenance ceiling light',12,3.48,-37,1.2,0.05,0.28,mat.light);
+
+box('Maintenance workbench',9.1,0.8,-39,3.1,0.18,0.9,mat.metal);
+box('Maintenance workbench legs',8,0.4,-39,0.12,0.8,0.12,mat.dark);
+box('Maintenance toolbox',9,1.18,-39,0.75,0.55,0.55,mat.red);
+
+box('Maintenance shelf',15.5,1.65,-39,0.3,2.8,3.5,mat.metal);
+box('Maintenance shelf upper',15.2,2.75,-39,0.8,0.08,3.5,mat.metal);
+box('Maintenance shelf lower',15.2,0.95,-39,0.8,0.08,3.5,mat.metal);
+makeSupplyCrate(14.6,-40,0.65);
+makeSupplyCrate(14.7,-36.8,0.55);
+
+box('Maintenance generator',11.7,0.72,-34.6,1.35,1.35,0.9,mat.dark);
+box('Generator control panel',11.7,0.95,-34.12,0.7,0.42,0.05,mat.black);
+box('Generator warning light',11.7,1.04,-34.08,0.12,0.08,0.025,mat.red);
+
+box('Maintenance locker',7.4,1.05,-35.3,0.75,2.1,0.8,mat.dark);
+box('Maintenance locker handle',7.4,1.1,-34.87,0.08,0.22,0.04,mat.metal);
+box('Maintenance pipe horizontal',12,2.65,-41.55,7.5,0.14,0.14,mat.metal);
+for(const x of [9,12,15])box('Maintenance pipe bracket',x,2.48,-41.55,0.12,0.38,0.2,mat.dark);
+
+// Items to discover inside the maintenance building.
+const fuseItem=box('Loose fuse',9.1,1.03,-39,0.22,0.08,0.12,
+ new THREE.MeshStandardMaterial({color:0xf0d77b,emissive:0x5b4510}));
+const logbookItem=box('Maintenance logbook',15.15,1.08,-39,0.38,0.06,0.28,mat.paper);
+const photographItem=box('Old photograph',7.4,1.4,-35.3,0.18,0.02,0.24,mat.paper);
+const maintenanceKeyItem=box('Rusty maintenance key',11.7,1.47,-34.6,0.3,0.045,0.09,
+ new THREE.MeshStandardMaterial({color:0xc0a36a,metalness:0.65,roughness:0.35}));
+const noteItem=box('Ranger note',12,0.25,-30.5,0.42,0.025,0.32,mat.paper);
+
+let fuseFound=false,logbookFound=false,photoFound=false,maintenanceKeyFound=false,noteFound=false,generatorStarted=false;
 
 // KEYCARD IN THE STORAGE ROOM
 const keycard=box('Security keycard',-4.9,1.12,22.35,0.28,0.035,0.18,
@@ -551,6 +558,55 @@ function toggleFlashlight(){
 function tryInteract(){
  if(!started)return;
 
+ // MAINTENANCE BUILDING INTERACTIONS
+ const near=(obj,r=1.8)=>Math.hypot(player.x-obj.position.x,player.z-obj.position.z)<r;
+
+ if(!fuseFound&&near(fuseItem)){
+  fuseFound=true;
+  scene.remove(fuseItem);
+  hint.textContent='You found a spare fuse. The generator may need it.';
+  return;
+ }
+ if(!logbookFound&&near(logbookItem)){
+  logbookFound=true;
+  scene.remove(logbookItem);
+  hint.textContent='Maintenance log: “Power failed after the lower ward was sealed. Do not restore it alone.”';
+  return;
+ }
+ if(!photoFound&&near(photographItem)){
+  photoFound=true;
+  scene.remove(photographItem);
+  hint.textContent='An old photograph shows hospital staff beside a forest access gate. One face has been scratched out.';
+  return;
+ }
+ if(!maintenanceKeyFound&&near(maintenanceKeyItem)){
+  maintenanceKeyFound=true;
+  scene.remove(maintenanceKeyItem);
+  hint.textContent='Rusty maintenance key acquired. There may be a locked service cabinet.';
+  return;
+ }
+ if(!noteFound&&near(noteItem)){
+  noteFound=true;
+  scene.remove(noteItem);
+  hint.textContent='Ranger note: “The prison lights still flicker after midnight. The hospital is not the only place abandoned.”';
+  return;
+ }
+ if(Math.hypot(player.x-11.7,player.z+34.6)<2.2){
+  if(!fuseFound){
+   hint.textContent='The generator is missing a fuse. Search the workbench.';
+   return;
+  }
+  if(!generatorStarted){
+   generatorStarted=true;
+   maintenanceLamp.intensity=12;
+   hint.textContent='The generator coughs to life. Something deep in the forest answers with a distant metallic bang.';
+  }else{
+   hint.textContent='The generator is running, but you do not know what it powered.';
+  }
+  return;
+ }
+
+ // ORIGINAL KEYCARD PICKUP
  const kd=Math.hypot(player.x-keycard.position.x,player.z-keycard.position.z);
  if(!keycardCollected&&kd<1.7){
   keycardCollected=true;
@@ -561,6 +617,7 @@ function tryInteract(){
   return;
  }
 
+ // ORIGINAL EXIT DOOR
  if(Math.abs(player.x)<2.1&&Math.abs(player.z+5.2)<2.1){
   if(!keycardCollected){
    hint.textContent='ACCESS DENIED. Find the security keycard in the Storage Room.';
@@ -577,6 +634,7 @@ function tryInteract(){
   return;
  }
 
+ // ORIGINAL FLASHLIGHT PICKUP
  if(!flashlightCollected){
   const d=Math.hypot(player.x-flashlightItem.position.x,player.z-flashlightItem.position.z);
   if(d<1.5){
@@ -587,14 +645,14 @@ function tryInteract(){
    return;
   }
  }
- hint.textContent='Nothing to interact with nearby.';
+ hint.textContent='Nothing nearby. Search the maintenance building for clues, a fuse, a key, and a logbook.';
 }
 
 function startGame(){
  if(started)return;
  started=true;
  overlay.style.display='none';
- hint.textContent='Find the security keycard in the Storage Room to unlock the rear exit.';
+ hint.textContent='Find the security keycard in the Storage Room. Once outside, investigate the maintenance building.';
  renderer.domElement.requestPointerLock?.();
 }
 document.getElementById('start').addEventListener('click',startGame);
