@@ -6,20 +6,23 @@
 <title>Hospital Zero | Mxtt704</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;overflow:hidden;background:#18232b;color:#e8edf2;font-family:Arial,sans-serif}
+body{margin:0;overflow:hidden;background:#10191c;color:#e8edf2;font-family:Arial,sans-serif}
+canvas{display:block}
 #hud{position:fixed;inset:0;z-index:2;pointer-events:none}
-#title{position:absolute;top:22px;left:24px;letter-spacing:4px;font-size:13px;text-shadow:0 1px 4px #000}
-#credits{position:absolute;top:22px;right:24px;text-align:right;font-size:12px;line-height:1.8;color:#e0e8ef;text-shadow:0 1px 4px #000}
-#status{position:absolute;bottom:24px;left:24px;font-size:12px;line-height:1.8;text-shadow:0 1px 5px #000}
-#hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);width:90%;text-align:center;font-size:13px;text-shadow:0 1px 5px #000}
-#crosshair{position:absolute;top:50%;left:50%;width:6px;height:6px;border:1px solid white;border-radius:50%;transform:translate(-50%,-50%)}
-#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(#344754,#10171d)}
-#panel{max-width:620px;width:100%;padding:35px 25px;text-align:center;border:1px solid #657582;background:#18232b}
-h1{font-size:clamp(32px,7vw,60px);letter-spacing:6px;margin:15px 0}
+#title{position:absolute;top:22px;left:24px;letter-spacing:4px;font-size:13px;text-shadow:0 2px 8px #000}
+#credits{position:absolute;top:22px;right:24px;text-align:right;font-size:12px;line-height:1.8;text-shadow:0 2px 8px #000}
+#status{position:absolute;bottom:24px;left:24px;font-size:12px;line-height:1.9;text-shadow:0 2px 8px #000}
+#hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);width:90%;text-align:center;font-size:13px;text-shadow:0 2px 8px #000}
+#crosshair{position:absolute;top:50%;left:50%;width:7px;height:7px;border:1px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 5px #000}
+#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at center,#35444a,#101619 75%)}
+#panel{max-width:620px;width:100%;padding:35px 25px;text-align:center;border:1px solid #657582;background:rgba(15,23,27,.94);box-shadow:0 20px 90px #000}
+h1{font-size:clamp(32px,7vw,60px);letter-spacing:6px;margin:15px 0;text-shadow:0 0 25px #9bb5c044}
 .sub{color:#d4e0e9;font-size:11px;letter-spacing:3px}
-button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#111820;font-weight:bold;cursor:pointer}
+button{margin-top:20px;padding:14px 22px;border:1px solid #d8e4e8;background:#e8f2fa;color:#111820;font-weight:bold;cursor:pointer}
+button:hover{background:#b9d5dd}
 .instructions{margin-top:20px;color:#e0e8ef;font-size:13px;line-height:2}
 .small{margin-top:18px;color:#b7c5d0;font-size:11px}
+@media(max-width:600px){#credits{font-size:10px;right:12px}#title{left:12px}#status{left:12px;bottom:12px;font-size:10px}#hint{bottom:16px;font-size:11px}}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
@@ -30,7 +33,12 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
   <div id="title">HOSPITAL ZERO</div>
   <div id="credits">A game by Mxtt704<br>YouTube: Mxtt704<br>TikTok: Mxtt704</div>
   <div id="crosshair"></div>
-  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>KEYCARD: <span id="keyState">NOT FOUND</span><br>LOCATION: HOSPITAL<br>OBJECTIVE: Find the keycard, escape, and investigate the maintenance building.</div>
+  <div id="status">
+    FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>
+    KEYCARD: <span id="keyState">NOT FOUND</span><br>
+    LOCATION: <span id="location">HOSPITAL</span><br>
+    OBJECTIVE: Find the keycard, escape, investigate the maintenance building.
+  </div>
   <div id="hint">Enter the hospital when you are ready.</div>
 </div>
 <div id="overlay">
@@ -45,63 +53,73 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
       <b>E</b> — Interact / pick up items<br>
       <b>F</b> — Toggle flashlight<br>
       <b>SHIFT</b> — Run<br>
-      <b>ESC</b> — Release mouse<br>
-      <b>GAMEPAD</b> — Left stick moves, right stick looks
+      <b>ESC</b> — Release mouse
     </div>
-    <div class="small">PROTOTYPE 04 · EXPLORATION UPDATE</div>
+    <div class="small">ATMOSPHERIC GRAPHICS UPDATE · PROTOTYPE</div>
   </div>
 </div>
 
 <script type="module">
 import * as THREE from 'three';
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x18232b);
-scene.fog = new THREE.FogExp2(0x18232b, 0.0032);
+const scene=new THREE.Scene();
+const skyColor=new THREE.Color(0x82949a);
+scene.background=skyColor;
+scene.fog=new THREE.FogExp2(0x82949a,0.008);
 
-const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,900);
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1200);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.25;
+renderer.toneMappingExposure=1.05;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.domElement.style.cssText='position:fixed;inset:0;z-index:0';
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xd7e6f2,0x555b60,1.35));
+scene.add(new THREE.HemisphereLight(0xc6d6dc,0x30382e,1.25));
+const sun=new THREE.DirectionalLight(0xdce4dc,2.0);
+sun.position.set(-40,90,35);
+sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);
+sun.shadow.camera.left=-80;
+sun.shadow.camera.right=80;
+sun.shadow.camera.top=80;
+sun.shadow.camera.bottom=-80;
+sun.shadow.bias=-0.0004;
+scene.add(sun);
 
-const mainLight=new THREE.PointLight(0xd8eaff,25,20,2);
+const mainLight=new THREE.PointLight(0xd8eaff,18,20,2);
 mainLight.position.set(0,3.35,-1.5);
 scene.add(mainLight);
 
-const beam=new THREE.SpotLight(0xe1efff,0,24,Math.PI/7,0.35,1.2);
+const beam=new THREE.SpotLight(0xe1efff,0,25,Math.PI/7,0.4,1.2);
 camera.add(beam);
 camera.add(beam.target);
 beam.target.position.set(0,-0.1,-1);
 scene.add(camera);
 
 const mat={
- floor:new THREE.MeshStandardMaterial({color:0x535d63,roughness:0.95}),
- outdoorFloor:new THREE.MeshStandardMaterial({color:0x555b50,roughness:1}),
+ floor:new THREE.MeshStandardMaterial({color:0x424b50,roughness:0.94}),
+ outdoorFloor:new THREE.MeshStandardMaterial({color:0x3b4936,roughness:1}),
  asphalt:new THREE.MeshStandardMaterial({color:0x292e30,roughness:1}),
- fence:new THREE.MeshStandardMaterial({color:0x414a4c,metalness:0.45,roughness:0.75}),
- foliage:new THREE.MeshStandardMaterial({color:0x26392c,roughness:1}),
- concrete:new THREE.MeshStandardMaterial({color:0x646b6d,roughness:1}),
- wall:new THREE.MeshStandardMaterial({color:0x89969e,roughness:0.95}),
- dark:new THREE.MeshStandardMaterial({color:0x39464e,roughness:0.9}),
- metal:new THREE.MeshStandardMaterial({color:0x87949b,metalness:0.45,roughness:0.5}),
- bed:new THREE.MeshStandardMaterial({color:0xb7c0c4}),
- sheet:new THREE.MeshStandardMaterial({color:0xe0e4e1}),
- glass:new THREE.MeshStandardMaterial({color:0x58727e}),
- black:new THREE.MeshStandardMaterial({color:0x252f35}),
- red:new THREE.MeshStandardMaterial({color:0x922e31,emissive:0x3b0809}),
- light:new THREE.MeshStandardMaterial({color:0xf0f5f8,emissive:0x667785}),
- stain:new THREE.MeshStandardMaterial({color:0x626d70,roughness:1}),
- paper:new THREE.MeshStandardMaterial({color:0xc7c5b9,roughness:1}),
- crate:new THREE.MeshStandardMaterial({color:0x665b49,roughness:0.95}),
- rubber:new THREE.MeshStandardMaterial({color:0x202529,roughness:0.9}),
- warning:new THREE.MeshStandardMaterial({color:0xb4a16b,roughness:0.9})
+ concrete:new THREE.MeshStandardMaterial({color:0x596365,roughness:0.96}),
+ wall:new THREE.MeshStandardMaterial({color:0x758187,roughness:0.92}),
+ dark:new THREE.MeshStandardMaterial({color:0x303b40,roughness:0.9}),
+ metal:new THREE.MeshStandardMaterial({color:0x75858b,metalness:0.4,roughness:0.52}),
+ bed:new THREE.MeshStandardMaterial({color:0xaab5b8,roughness:0.95}),
+ sheet:new THREE.MeshStandardMaterial({color:0xd1d4cf,roughness:1}),
+ glass:new THREE.MeshStandardMaterial({color:0x496773,roughness:0.35,metalness:0.15}),
+ black:new THREE.MeshStandardMaterial({color:0x20282c}),
+ red:new THREE.MeshStandardMaterial({color:0x922e31,emissive:0x320506}),
+ light:new THREE.MeshStandardMaterial({color:0xe1e7e8,emissive:0x56616a}),
+ stain:new THREE.MeshStandardMaterial({color:0x515c5b,roughness:1}),
+ paper:new THREE.MeshStandardMaterial({color:0xbcbcaf,roughness:1}),
+ crate:new THREE.MeshStandardMaterial({color:0x5c5140,roughness:1}),
+ rubber:new THREE.MeshStandardMaterial({color:0x171c1e,roughness:0.95}),
+ warning:new THREE.MeshStandardMaterial({color:0x9e8957,roughness:0.9})
 };
 
 function box(name,x,y,z,sx,sy,sz,material){
@@ -113,645 +131,368 @@ function box(name,x,y,z,sx,sy,sz,material){
  scene.add(m);
  return m;
 }
-
-function lamp(x,z,power=8){
- const light=new THREE.PointLight(0xe0efff,power,10,2);
- light.position.set(x,3.35,z);
- scene.add(light);
- box('Ceiling lamp',x,3.68,z,0.7,0.045,0.25,mat.light);
- return light;
+function lamp(x,z,power=7){
+ const l=new THREE.PointLight(0xd6e8ef,power,10,2);
+ l.position.set(x,3.35,z);
+ scene.add(l);
+ box('Ceiling lamp',x,3.68,z,.7,.045,.25,mat.light);
+ return l;
 }
 
-// STARTING PATIENT ROOM
-box('Patient room floor',0,-0.12,0,10,0.24,12,mat.floor);
-box('Patient room ceiling',0,3.8,0,10,0.2,12,mat.dark);
-box('Back wall left',-3.25,1.8,-6,3.5,3.8,0.2,mat.wall);
-box('Back wall right',3.25,1.8,-6,3.5,3.8,0.2,mat.wall);
-box('Back wall header',0,3.55,-6,3,0.3,0.2,mat.wall);
-box('Left wall',-5,1.8,0,0.2,3.8,12,mat.wall);
-box('Right wall',5,1.8,0,0.2,3.8,12,mat.wall);
-box('Front left wall',-3.45,1.8,6,3.1,3.8,0.2,mat.wall);
-box('Front right wall',3.45,1.8,6,3.1,3.8,0.2,mat.wall);
-box('Front header',0,3.55,6,3.8,0.5,0.2,mat.wall);
+// HOSPITAL PATIENT ROOM
+box('Patient room floor',0,-.12,0,10,.24,12,mat.floor);
+box('Patient room ceiling',0,3.8,0,10,.2,12,mat.dark);
+box('Back wall left',-3.25,1.8,-6,3.5,3.8,.2,mat.wall);
+box('Back wall right',3.25,1.8,-6,3.5,3.8,.2,mat.wall);
+box('Back wall header',0,3.55,-6,3,.3,.2,mat.wall);
+box('Left wall',-5,1.8,0,.2,3.8,12,mat.wall);
+box('Right wall',5,1.8,0,.2,3.8,12,mat.wall);
+box('Front left wall',-3.45,1.8,6,3.1,3.8,.2,mat.wall);
+box('Front right wall',3.45,1.8,6,3.1,3.8,.2,mat.wall);
+box('Front header',0,3.55,6,3.8,.5,.2,mat.wall);
 
-const exitDoor=box('Locked rear door',0,1.5,-5.86,2,3,0.12,mat.dark);
-box('Exit keypad',1.35,1.45,-5.68,0.22,0.48,0.08,mat.black);
-const keypadLight=box('Keypad indicator',1.35,1.62,-5.62,0.08,0.06,0.025,mat.red);
-box('Door window',0,2.15,-5.78,0.65,0.5,0.035,mat.glass);
-box('Door handle',0.72,1.45,-5.72,0.12,0.08,0.08,mat.metal);
-
-box('Emergency sign',-4.84,2.7,-3.9,0.04,0.35,1,mat.red);
-box('Emergency glow',-4.8,2.7,-3.9,0.03,0.12,0.7,new THREE.MeshBasicMaterial({color:0xff3434}));
+const exitDoor=box('Locked rear door',0,1.5,-5.86,2,3,.12,mat.dark);
+box('Exit keypad',1.35,1.45,-5.68,.22,.48,.08,mat.black);
+const keypadLight=box('Keypad indicator',1.35,1.62,-5.62,.08,.06,.025,mat.red);
+box('Door window',0,2.15,-5.78,.65,.5,.035,mat.glass);
+box('Door handle',.72,1.45,-5.72,.12,.08,.08,mat.metal);
+box('Emergency sign',-4.84,2.7,-3.9,.04,.35,1,mat.red);
+box('Emergency glow',-4.8,2.7,-3.9,.03,.12,.7,new THREE.MeshBasicMaterial({color:0xff3434}));
 
 function makeBed(x,z){
- box('Bed frame',x,0.55,z,1.45,0.16,2.5,mat.metal);
- box('Mattress',x,0.68,z,1.38,0.18,2.42,mat.bed);
- box('Sheet',x,0.79,z+0.25,1.3,0.05,1.35,mat.sheet);
- box('Pillow',x,0.81,z-0.78,0.65,0.12,0.42,mat.sheet);
- for(const dx of [-0.58,0.58])for(const dz of [-1.05,1.05])
-  box('Bed leg',x+dx,0.27,z+dz,0.08,0.55,0.08,mat.metal);
- box('Bed rail',x,0.98,z+1.15,1.42,0.06,0.06,mat.metal);
+ box('Bed frame',x,.55,z,1.45,.16,2.5,mat.metal);
+ box('Mattress',x,.68,z,1.38,.18,2.42,mat.bed);
+ box('Sheet',x,.79,z+.25,1.3,.05,1.35,mat.sheet);
+ box('Pillow',x,.81,z-.78,.65,.12,.42,mat.sheet);
+ for(const dx of [-.58,.58])for(const dz of [-1.05,1.05])
+  box('Bed leg',x+dx,.27,z+dz,.08,.55,.08,mat.metal);
+ box('Bed rail',x,.98,z+1.15,1.42,.06,.06,mat.metal);
 }
-makeBed(-2.6,-1.5);
-makeBed(2.6,1.7);
+makeBed(-2.6,-1.5);makeBed(2.6,1.7);
 
 function makeCabinet(x,z){
- box('Cabinet',x,0.55,z,0.72,1,0.65,mat.dark);
- box('Cabinet top',x,1.08,z,0.78,0.08,0.7,mat.metal);
- box('Drawer',x,0.72,z+0.34,0.55,0.2,0.035,mat.metal);
- box('Drawer handle',x,0.72,z+0.38,0.18,0.035,0.035,mat.black);
+ box('Cabinet',x,.55,z,.72,1,.65,mat.dark);
+ box('Cabinet top',x,1.08,z,.78,.08,.7,mat.metal);
+ box('Drawer',x,.72,z+.34,.55,.2,.035,mat.metal);
+ box('Drawer handle',x,.72,z+.38,.18,.035,.035,mat.black);
 }
-makeCabinet(-3.7,-3.1);
-makeCabinet(3.65,0);
+makeCabinet(-3.7,-3.1);makeCabinet(3.65,0);
+box('Monitor stand',-3.7,1.5,-3.9,.08,.8,.08,mat.metal);
+box('Medical monitor',-3.7,2,-3.9,.75,.55,.16,mat.black);
+box('Monitor screen',-3.7,2,-3.8,.62,.4,.025,new THREE.MeshBasicMaterial({color:0x18352f}));
+box('Monitor trace',-3.7,2,-3.78,.42,.018,.012,new THREE.MeshBasicMaterial({color:0x7ad9a7}));
+box('IV pole',3.75,1.5,2,.045,2.7,.045,mat.metal);
+box('IV bar',3.75,2.83,2,.65,.05,.05,mat.metal);
+box('IV bag',3.75,2.55,2,.32,.42,.12,mat.glass);
+box('Trolley',-1.5,.8,3.9,1,.12,.65,mat.metal);
+box('Trolley tray',-1.5,.92,3.9,.7,.05,.42,mat.bed);
+box('Fallen stool',1.2,.25,4.3,.65,.12,.65,mat.dark);
+box('Paper note',-4.82,1.65,1.9,.035,.55,.42,mat.sheet);
+for(const [y,w] of [[1.75,.28],[1.65,.22],[1.55,.25]])
+ box('Writing',-4.79,y,1.9,.018,.018,w,mat.dark);
 
-box('Monitor stand',-3.7,1.5,-3.9,0.08,0.8,0.08,mat.metal);
-box('Medical monitor',-3.7,2,-3.9,0.75,0.55,0.16,mat.black);
-box('Monitor screen',-3.7,2,-3.8,0.62,0.4,0.025,new THREE.MeshBasicMaterial({color:0x18352f}));
-box('Monitor trace',-3.7,2,-3.78,0.42,0.018,0.012,new THREE.MeshBasicMaterial({color:0x7ad9a7}));
-box('IV pole',3.75,1.5,2,0.045,2.7,0.045,mat.metal);
-box('IV bar',3.75,2.83,2,0.65,0.05,0.05,mat.metal);
-box('IV bag',3.75,2.55,2,0.32,0.42,0.12,mat.glass);
-box('Trolley',-1.5,0.8,3.9,1,0.12,0.65,mat.metal);
-box('Trolley tray',-1.5,0.92,3.9,0.7,0.05,0.42,mat.bed);
-box('Fallen stool',1.2,0.25,4.3,0.65,0.12,0.65,mat.dark);
-box('Paper note',-4.82,1.65,1.9,0.035,0.55,0.42,mat.sheet);
-for(const [y,w] of [[1.75,0.28],[1.65,0.22],[1.55,0.25]])
- box('Writing',-4.79,y,1.9,0.018,0.018,w,mat.dark);
-
-// PATIENT ROOM DETAILS
 function makeWheelchair(x,z){
- box('Wheelchair seat',x,0.55,z,0.65,0.12,0.65,mat.black);
- box('Wheelchair back',x,0.95,z+0.28,0.65,0.75,0.1,mat.black);
- box('Wheelchair footrest',x,0.28,z-0.42,0.5,0.06,0.28,mat.metal);
+ box('Wheelchair seat',x,.55,z,.65,.12,.65,mat.black);
+ box('Wheelchair back',x,.95,z+.28,.65,.75,.1,mat.black);
+ box('Wheelchair footrest',x,.28,z-.42,.5,.06,.28,mat.metal);
  for(const side of [-1,1]){
-  const wheel=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.055,8,18),mat.rubber);
-  wheel.position.set(x+side*0.42,0.38,z+0.08);
-  wheel.rotation.y=Math.PI/2;
-  wheel.castShadow=true;
-  scene.add(wheel);
-  box('Wheelchair handle',x+side*0.25,1.35,z+0.32,0.06,0.35,0.06,mat.metal);
+  const wheel=new THREE.Mesh(new THREE.TorusGeometry(.32,.055,8,18),mat.rubber);
+  wheel.position.set(x+side*.42,.38,z+.08);
+  wheel.rotation.y=Math.PI/2;wheel.castShadow=true;scene.add(wheel);
+  box('Wheelchair handle',x+side*.25,1.35,z+.32,.06,.35,.06,mat.metal);
  }
- box('Wheelchair front caster',x+0.22,0.15,z-0.42,0.12,0.12,0.12,mat.rubber);
+ box('Wheelchair caster',x+.22,.15,z-.42,.12,.12,.12,mat.rubber);
 }
-
 function makeMedicalCart(x,z){
- box('Medical cart lower shelf',x,0.4,z,0.8,0.08,0.48,mat.metal);
- box('Medical cart top',x,0.95,z,0.85,0.08,0.52,mat.metal);
- for(const dx of [-0.34,0.34])for(const dz of [-0.18,0.18]){
-  box('Cart support',x+dx,0.67,z+dz,0.045,0.55,0.045,mat.metal);
-  box('Cart caster',x+dx,0.12,z+dz,0.12,0.12,0.12,mat.rubber);
+ box('Medical cart lower shelf',x,.4,z,.8,.08,.48,mat.metal);
+ box('Medical cart top',x,.95,z,.85,.08,.52,mat.metal);
+ for(const dx of [-.34,.34])for(const dz of [-.18,.18]){
+  box('Cart support',x+dx,.67,z+dz,.045,.55,.045,mat.metal);
+  box('Cart caster',x+dx,.12,z+dz,.12,.12,.12,mat.rubber);
  }
- box('Cart supply box',x-0.12,1.12,z,0.25,0.25,0.28,mat.paper);
- box('Cart tray',x+0.18,1.1,z-0.04,0.25,0.035,0.28,mat.glass);
+ box('Cart supply box',x-.12,1.12,z,.25,.25,.28,mat.paper);
+ box('Cart tray',x+.18,1.1,z-.04,.25,.035,.28,mat.glass);
 }
-
 function makeWallNotice(x,y,z,rotation=0){
- const notice=box('Hospital notice',x,y,z,0.035,0.52,0.72,mat.paper);
- notice.rotation.y=rotation;
- const line1=box('Notice text',x+Math.sin(rotation)*0.025,y+0.1,z-Math.cos(rotation)*0.025,0.015,0.025,0.48,mat.dark);
- line1.rotation.y=rotation;
- const line2=box('Notice text',x+Math.sin(rotation)*0.025,y-0.02,z-Math.cos(rotation)*0.025,0.015,0.02,0.38,mat.dark);
- line2.rotation.y=rotation;
- const line3=box('Notice text',x+Math.sin(rotation)*0.025,y-0.12,z-Math.cos(rotation)*0.025,0.015,0.02,0.43,mat.dark);
- line3.rotation.y=rotation;
+ const n=box('Hospital notice',x,y,z,.035,.52,.72,mat.paper);n.rotation.y=rotation;
+ for(const [yy,w] of [[.1,.48],[-.02,.38],[-.12,.43]]){
+  const line=box('Notice text',x+Math.sin(rotation)*.025,y+yy,z-Math.cos(rotation)*.025,.015,.02,w,mat.dark);
+  line.rotation.y=rotation;
+ }
 }
-
-function makeSupplyCrate(x,z,size=0.8){
+function makeSupplyCrate(x,z,size=.8){
  box('Abandoned supply crate',x,size/2,z,size,size,size,mat.crate);
- box('Crate top seam',x,size+0.01,z,size*0.94,0.025,size*0.94,mat.warning);
- box('Crate label',x,size*0.62,z-size/2-0.018,size*0.38,size*0.2,0.025,mat.paper);
+ box('Crate top seam',x,size+.01,z,size*.94,.025,size*.94,mat.warning);
+ box('Crate label',x,size*.62,z-size/2-.018,size*.38,size*.2,.025,mat.paper);
 }
-
 function makeWallStain(x,y,z,sx,sy,sz,rotation=0){
- const stain=box('Wall stain',x,y,z,sx,sy,sz,mat.stain);
- stain.rotation.y=rotation;
+ const s=box('Wall stain',x,y,z,sx,sy,sz,mat.stain);s.rotation.y=rotation;
 }
-
-makeWallNotice(-4.82,2.1,-1.3);
-makeWallNotice(4.82,2.25,2.9,Math.PI);
-makeMedicalCart(0.9,3.1);
-makeWheelchair(-0.3,1.1);
-makeWallStain(-4.87,1.1,0.4,0.025,0.48,1.1);
-makeWallStain(4.87,2.1,-1.4,0.025,0.6,0.9,Math.PI);
-box('Discarded medical tray',2.2,0.08,-3.2,0.7,0.08,0.45,mat.metal);
-box('Discarded bandage',2.1,0.14,-3.2,0.22,0.08,0.15,mat.sheet);
+makeWallNotice(-4.82,2.1,-1.3);makeWallNotice(4.82,2.25,2.9,Math.PI);
+makeMedicalCart(.9,3.1);makeWheelchair(-.3,1.1);
+makeWallStain(-4.87,1.1,.4,.025,.48,1.1);
+makeWallStain(4.87,2.1,-1.4,.025,.6,.9,Math.PI);
+box('Discarded medical tray',2.2,.08,-3.2,.7,.08,.45,mat.metal);
+box('Discarded bandage',2.1,.14,-3.2,.22,.08,.15,mat.sheet);
 lamp(0,-1.5,9);
 
 // MAIN CORRIDOR
-box('Corridor floor',0,-0.13,19,4.2,0.24,26,mat.floor);
-box('Corridor ceiling',0,3.8,19,4.2,0.2,26,mat.dark);
-
+box('Corridor floor',0,-.13,19,4.2,.24,26,mat.floor);
+box('Corridor ceiling',0,3.8,19,4.2,.2,26,mat.dark);
 function corridorWall(side,start,end){
  if(end<=start)return;
- const len=end-start;
- box((side<0?'Left':'Right')+' corridor wall',side*2.1,1.8,(start+end)/2,0.2,3.8,len,mat.wall);
+ box((side<0?'Left':'Right')+' corridor wall',side*2.1,1.8,(start+end)/2,.2,3.8,end-start,mat.wall);
 }
 for(const [a,b] of [[6,9.1],[10.9,21.1],[22.9,32]])corridorWall(-1,a,b);
 for(const [a,b] of [[6,15.1],[16.9,32]])corridorWall(1,a,b);
 
-// SIDE ROOMS
 function sideRoom(side,z,name){
- const cx=side*4.3, outer=side*6.4;
- box(name+' floor',cx,-0.13,z,4.2,0.24,4.8,mat.floor);
- box(name+' ceiling',cx,3.8,z,4.2,0.2,4.8,mat.dark);
- box(name+' outer wall',outer,1.8,z,0.2,3.8,4.8,mat.wall);
- box(name+' back wall',cx,1.8,z+2.4,4.2,3.8,0.2,mat.wall);
- box(name+' entrance wall A',side*2.25,1.8,z-1.65,0.2,3.8,1.5,mat.wall);
- box(name+' entrance wall B',side*2.25,1.8,z+1.65,0.2,3.8,1.5,mat.wall);
- box(name+' bed frame',cx,0.55,z+0.2,1.25,0.16,2.1,mat.metal);
- box(name+' mattress',cx,0.68,z+0.2,1.16,0.16,1.98,mat.bed);
- box(name+' cabinet',cx-side*1.25,0.55,z-1,0.6,1,0.6,mat.dark);
- box(name+' wall panel',side*6.28,2.2,z-1,0.035,0.65,0.85,mat.black);
+ const cx=side*4.3,outer=side*6.4;
+ box(name+' floor',cx,-.13,z,4.2,.24,4.8,mat.floor);
+ box(name+' ceiling',cx,3.8,z,4.2,.2,4.8,mat.dark);
+ box(name+' outer wall',outer,1.8,z,.2,3.8,4.8,mat.wall);
+ box(name+' back wall',cx,1.8,z+2.4,4.2,3.8,.2,mat.wall);
+ box(name+' entrance wall A',side*2.25,1.8,z-1.65,.2,3.8,1.5,mat.wall);
+ box(name+' entrance wall B',side*2.25,1.8,z+1.65,.2,3.8,1.5,mat.wall);
+ box(name+' bed frame',cx,.55,z+.2,1.25,.16,2.1,mat.metal);
+ box(name+' mattress',cx,.68,z+.2,1.16,.16,1.98,mat.bed);
+ box(name+' cabinet',cx-side*1.25,.55,z-1,.6,1,.6,mat.dark);
+ box(name+' wall panel',side*6.28,2.2,z-1,.035,.65,.85,mat.black);
  lamp(cx,z-1.3,6);
 }
 sideRoom(-1,10,'PATIENT ROOM 02');
 sideRoom(1,16,'TREATMENT ROOM');
 sideRoom(-1,22,'STORAGE ROOM');
 
-// CORRIDOR DETAILS
-makeMedicalCart(-0.7,12.8);
-makeWheelchair(0.9,18.4);
-makeWallNotice(-1.98,2.2,11.9);
-makeWallNotice(1.98,2.2,18.2,Math.PI);
+makeMedicalCart(-.7,12.8);makeWheelchair(.9,18.4);
+makeWallNotice(-1.98,2.2,11.9);makeWallNotice(1.98,2.2,18.2,Math.PI);
 makeWallNotice(-1.98,2.2,24.1);
-makeWallStain(-1.985,1.55,15.2,0.025,0.75,1.2);
-makeWallStain(1.985,1.3,22.7,0.025,0.6,0.95,Math.PI);
-box('Fallen corridor trolley',0.7,0.35,13.2,0.8,0.12,0.55,mat.metal);
-box('Trolley wheel',0.4,0.12,13.2,0.13,0.13,0.13,mat.black);
-box('Broken chair seat',-0.5,0.3,24.7,0.65,0.12,0.65,mat.dark);
-box('Broken chair back',-0.5,0.6,25,0.65,0.55,0.1,mat.dark);
-box('Loose medical papers',-0.8,0.015,16.1,0.45,0.025,0.35,mat.paper);
-box('Loose medical papers',-0.35,0.018,16.25,0.4,0.025,0.3,mat.sheet);
+makeWallStain(-1.985,1.55,15.2,.025,.75,1.2);
+makeWallStain(1.985,1.3,22.7,.025,.6,.95,Math.PI);
+box('Fallen corridor trolley',.7,.35,13.2,.8,.12,.55,mat.metal);
+box('Broken chair seat',-.5,.3,24.7,.65,.12,.65,mat.dark);
+box('Broken chair back',-.5,.6,25,.65,.55,.1,mat.dark);
+box('Loose medical papers',-.8,.015,16.1,.45,.025,.35,mat.paper);
+box('Loose medical papers',-.35,.018,16.25,.4,.025,.3,mat.sheet);
 for(const z of [8.2,13.5,19,25,30.5])lamp(0,z,8);
-box('Room sign 02',-1.98,2.65,8.9,0.035,0.3,0.9,mat.red);
-box('Treatment sign',1.98,2.65,14.6,0.035,0.3,1.15,mat.red);
-box('Storage sign',-1.98,2.65,20.6,0.035,0.3,0.85,mat.red);
+box('Room sign 02',-1.98,2.65,8.9,.035,.3,.9,mat.red);
+box('Treatment sign',1.98,2.65,14.6,.035,.3,1.15,mat.red);
+box('Storage sign',-1.98,2.65,20.6,.035,.3,.85,mat.red);
 
-// PATIENT ROOM 02 DETAILS
-makeMedicalCart(-4.4,9.4);
-makeWallNotice(-6.28,2.2,9.7,Math.PI/2);
-box('Patient room 02 bedside table',-3.1,0.45,11.1,0.65,0.8,0.55,mat.dark);
-box('Patient room 02 table top',-3.1,0.88,11.1,0.72,0.07,0.62,mat.metal);
-box('Patient chart',-3.1,0.94,11.1,0.32,0.025,0.22,mat.paper);
-makeWallStain(-6.28,1.2,10.9,0.025,0.6,0.8,Math.PI/2);
+makeMedicalCart(-4.4,9.4);makeWallNotice(-6.28,2.2,9.7,Math.PI/2);
+box('Patient room bedside table',-3.1,.45,11.1,.65,.8,.55,mat.dark);
+box('Patient room table top',-3.1,.88,11.1,.72,.07,.62,mat.metal);
+box('Patient chart',-3.1,.94,11.1,.32,.025,.22,mat.paper);
+makeWallStain(-6.28,1.2,10.9,.025,.6,.8,Math.PI/2);
 
-// TREATMENT ROOM DETAILS
-makeMedicalCart(4.5,15.1);
-makeWallNotice(6.28,2.2,16.8,Math.PI/2);
-box('Treatment counter',4.45,0.65,17.5,1.7,1.2,0.55,mat.dark);
-box('Treatment counter top',4.45,1.28,17.5,1.8,0.08,0.62,mat.metal);
-box('Treatment instrument tray',4.3,1.36,17.45,0.55,0.05,0.32,mat.glass);
-box('Treatment supply bottle',4.75,1.48,17.45,0.14,0.2,0.14,mat.paper);
-makeWallStain(6.28,1.45,15.4,0.025,0.75,1.05,Math.PI/2);
+makeMedicalCart(4.5,15.1);makeWallNotice(6.28,2.2,16.8,Math.PI/2);
+box('Treatment counter',4.45,.65,17.5,1.7,1.2,.55,mat.dark);
+box('Treatment counter top',4.45,1.28,17.5,1.8,.08,.62,mat.metal);
+box('Treatment instrument tray',4.3,1.36,17.45,.55,.05,.32,mat.glass);
+box('Treatment supply bottle',4.75,1.48,17.45,.14,.2,.14,mat.paper);
+makeWallStain(6.28,1.45,15.4,.025,.75,1.05,Math.PI/2);
 
-// STORAGE ROOM DETAILS
-makeSupplyCrate(-4.3,21.0,0.8);
-makeSupplyCrate(-5.5,21.8,0.7);
-makeSupplyCrate(-4.4,23.0,0.65);
-box('Storage shelf upright',-5.8,1.4,22.7,0.08,2.8,0.08,mat.metal);
-box('Storage shelf upright',-4.6,1.4,22.7,0.08,2.8,0.08,mat.metal);
-box('Storage shelf upper',-5.2,2.1,22.7,1.3,0.08,0.55,mat.metal);
-box('Storage shelf lower',-5.2,0.95,22.7,1.3,0.08,0.55,mat.metal);
-box('Storage supply box',-5.2,2.35,22.7,0.5,0.4,0.4,mat.paper);
-makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
-makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
+makeSupplyCrate(-4.3,21,.8);makeSupplyCrate(-5.5,21.8,.7);makeSupplyCrate(-4.4,23,.65);
+box('Storage shelf upright',-5.8,1.4,22.7,.08,2.8,.08,mat.metal);
+box('Storage shelf upright',-4.6,1.4,22.7,.08,2.8,.08,mat.metal);
+box('Storage shelf upper',-5.2,2.1,22.7,1.3,.08,.55,mat.metal);
+box('Storage shelf lower',-5.2,.95,22.7,1.3,.08,.55,mat.metal);
+box('Storage supply box',-5.2,2.35,22.7,.5,.4,.4,mat.paper);
+makeWallNotice(-6.28,2.2,23,Math.PI/2);
+makeWallStain(-6.28,1.45,21.2,.025,.65,.85,Math.PI/2);
 
-// OUTDOOR FOREST AND EXPANDED ISLAND
-const oceanMat = new THREE.MeshStandardMaterial({color:0x123d59,roughness:0.25,metalness:0.35});
-const beachMat = new THREE.MeshStandardMaterial({color:0x9b8a62,roughness:1});
+// OUTDOOR ISLAND, SHORE AND MAINLAND
+const oceanMat=new THREE.MeshStandardMaterial({color:0x12394a,roughness:.32,metalness:.18});
+const beachMat=new THREE.MeshStandardMaterial({color:0x77715b,roughness:1});
+const ocean=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),oceanMat);
+ocean.rotation.x=-Math.PI/2;ocean.position.set(0,-.48,-35);scene.add(ocean);
+const distantWater=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),oceanMat);
+distantWater.rotation.x=-Math.PI/2;distantWater.position.set(0,-.52,-35);scene.add(distantWater);
 
-const ocean = new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),oceanMat);
-ocean.rotation.x=-Math.PI/2;
-ocean.position.set(0,-0.48,-35);
-scene.add(ocean);
+const beach=new THREE.Mesh(new THREE.CircleGeometry(1,128),beachMat);
+beach.rotation.x=-Math.PI/2;beach.scale.set(101,122,1);beach.position.set(0,-.24,-35);scene.add(beach);
+const islandGround=new THREE.Mesh(new THREE.CircleGeometry(1,128),mat.outdoorFloor);
+islandGround.rotation.x=-Math.PI/2;islandGround.scale.set(97,118,1);
+islandGround.position.set(0,-.10,-35);islandGround.receiveShadow=true;scene.add(islandGround);
 
-const distantWater = new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),oceanMat);
-distantWater.rotation.x=-Math.PI/2;
-distantWater.position.set(0,-0.52,-35);
-scene.add(distantWater);
-
-const beach = new THREE.Mesh(new THREE.CircleGeometry(1,96),beachMat);
-beach.rotation.x=-Math.PI/2;
-beach.scale.set(101,122,1);
-beach.position.set(0,-0.24,-35);
-scene.add(beach);
-
-const islandGround = new THREE.Mesh(new THREE.CircleGeometry(1,96),mat.outdoorFloor);
-islandGround.rotation.x=-Math.PI/2;
-islandGround.scale.set(97,118,1);
-islandGround.position.set(0,-0.10,-35);
-islandGround.receiveShadow=true;
-scene.add(islandGround);
-
-const shoreRockMat = new THREE.MeshStandardMaterial({color:0x454943,roughness:1});
-for(let i=0;i<150;i++){
- const angle=Math.random()*Math.PI*2;
- const radius=98+Math.random()*5;
- const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+Math.random()*1.5,0),shoreRockMat);
- rock.position.set(Math.cos(angle)*radius,-0.05+Math.random()*0.15,-35+Math.sin(angle)*radius*1.15);
- rock.scale.y=0.5+Math.random();
- rock.rotation.set(Math.random(),Math.random(),Math.random());
- scene.add(rock);
+const shoreRockMat=new THREE.MeshStandardMaterial({color:0x444943,roughness:1});
+for(let i=0;i<190;i++){
+ const a=Math.random()*Math.PI*2,r=97+Math.random()*7;
+ const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.4+Math.random()*1.5,1),shoreRockMat);
+ rock.position.set(Math.cos(a)*r,-.04+Math.random()*.18,-35+Math.sin(a)*r*1.16);
+ rock.scale.set(.8+Math.random(),.35+Math.random()*.6,.8+Math.random());
+ rock.rotation.set(Math.random(),Math.random(),Math.random());rock.castShadow=true;scene.add(rock);
 }
 
-const oceanSurfaces=[ocean,distantWater];
-
-// Distant mainland coastline, hills, and road
-const mainlandMat=new THREE.MeshStandardMaterial({color:0x394239,roughness:1});
+const mainlandMat=new THREE.MeshStandardMaterial({color:0x38483e,roughness:1});
 const mainland=new THREE.Mesh(new THREE.PlaneGeometry(360,100),mainlandMat);
-mainland.rotation.x=-Math.PI/2;
-mainland.position.set(0,-0.18,-181);
-scene.add(mainland);
-
-for(let i=0;i<26;i++){
- const hill=new THREE.Mesh(new THREE.ConeGeometry(5+Math.random()*12,8+Math.random()*18,7),mainlandMat);
- hill.position.set(-170+i*13,3,-208-Math.random()*22);
- hill.rotation.y=Math.random()*Math.PI;
- scene.add(hill);
+mainland.rotation.x=-Math.PI/2;mainland.position.set(0,-.18,-181);scene.add(mainland);
+for(let i=0;i<30;i++){
+ const hill=new THREE.Mesh(new THREE.ConeGeometry(6+Math.random()*13,10+Math.random()*20,8),mainlandMat);
+ hill.position.set(-180+i*12,3,-208-Math.random()*25);
+ hill.rotation.y=Math.random()*Math.PI;hill.castShadow=true;scene.add(hill);
 }
-box('Distant mainland road',0,-0.08,-174,7,0.08,95,mat.asphalt);
+box('Distant mainland road',0,-.08,-174,7,.08,95,mat.asphalt);
+box('Forest ground',0,-.28,-35,58,.25,62,mat.outdoorFloor);
 
-box('Forest ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
-
-const forestSoil=new THREE.MeshStandardMaterial({color:0x292c22,roughness:1});
-const mossMat=new THREE.MeshStandardMaterial({color:0x35402a,roughness:1});
-const grassMats=[
- new THREE.MeshStandardMaterial({color:0x3e4930,roughness:1}),
- new THREE.MeshStandardMaterial({color:0x596044,roughness:1}),
- new THREE.MeshStandardMaterial({color:0x252f22,roughness:1})
+// Natural ground patches
+const soilMats=[
+ new THREE.MeshStandardMaterial({color:0x292f25,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x343d2c,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x4a5038,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x3a4032,roughness:1})
 ];
-
-function forestPatch(x,z,w,d,material){
- const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,0.035,d),material);
- mesh.position.set(x,-0.125,z);
- mesh.receiveShadow=true;
- scene.add(mesh);
-}
-
-for(let i=0;i<105;i++){
- const x=(Math.random()-0.5)*73;
- const z=-8-Math.random()*91;
- forestPatch(x,z,1+Math.random()*3,1+Math.random()*3,Math.random()<0.5?forestSoil:mossMat);
+for(let i=0;i<260;i++){
+ const x=(Math.random()-.5)*85,z=-8-Math.random()*93;
+ const patch=new THREE.Mesh(new THREE.CircleGeometry(.5+Math.random()*1.8,7),soilMats[Math.floor(Math.random()*soilMats.length)]);
+ patch.rotation.x=-Math.PI/2;patch.scale.set(1+Math.random(),.7+Math.random(),1);
+ patch.position.set(x,-.115,z);scene.add(patch);
 }
 
 const barkMat=new THREE.MeshStandardMaterial({color:0x403329,roughness:1});
 const barkLight=new THREE.MeshStandardMaterial({color:0x594536,roughness:1});
 const leafMats=[
- new THREE.MeshStandardMaterial({color:0x182b20,roughness:1}),
- new THREE.MeshStandardMaterial({color:0x243b29,roughness:1}),
- new THREE.MeshStandardMaterial({color:0x31472f,roughness:1}),
- new THREE.MeshStandardMaterial({color:0x1b3025,roughness:1})
+ new THREE.MeshStandardMaterial({color:0x14271d,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x203829,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x30452f,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x1a3024,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x394a32,roughness:1})
 ];
 
-function makeForestTree(x,z,h,r=0.35){
- const trunk=new THREE.Mesh(new THREE.CylinderGeometry(r*0.72,r,h,7),Math.random()<0.5?barkMat:barkLight);
- trunk.position.set(x,h*0.5,z);
- trunk.castShadow=true;
- trunk.receiveShadow=true;
- scene.add(trunk);
-
- for(let i=0;i<3;i++){
-  const radius=h*(0.22+Math.random()*0.07);
+function makeForestTree(x,z,h,r=.35){
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(r*.65,r,h,8),Math.random()<.5?barkMat:barkLight);
+ trunk.position.set(x,h*.5,z);trunk.castShadow=true;trunk.receiveShadow=true;scene.add(trunk);
+ for(let i=0;i<4;i++){
+  const radius=h*(.19+Math.random()*.09);
   const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(radius,1),leafMats[Math.floor(Math.random()*leafMats.length)]);
-  crown.position.set(x+(Math.random()-0.5)*h*0.15,h*(0.58+i*0.14),z+(Math.random()-0.5)*h*0.15);
-  crown.scale.set(1.15,1.1,1.05);
-  crown.castShadow=true;
-  scene.add(crown);
+  crown.position.set(x+(Math.random()-.5)*h*.16,h*(.48+i*.115),z+(Math.random()-.5)*h*.16);
+  crown.scale.set(.9+Math.random()*.45,.9+Math.random()*.4,.9+Math.random()*.4);
+  crown.rotation.set(Math.random(),Math.random(),Math.random());
+  crown.castShadow=true;crown.receiveShadow=true;scene.add(crown);
  }
-
- for(let b=0;b<2;b++){
-  const branch=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.07,h*0.24,5),barkMat);
-  branch.position.set(x+(b===0?-1:1)*h*0.14,h*0.62,z);
-  branch.rotation.z=b===0?-0.8:0.8;
-  scene.add(branch);
+ for(let b=0;b<3;b++){
+  const branch=new THREE.Mesh(new THREE.CylinderGeometry(.025,.065,h*.25,5),barkMat);
+  branch.position.set(x+(b-1)*h*.11,h*(.45+Math.random()*.25),z+(Math.random()-.5)*h*.12);
+  branch.rotation.z=(b-1)*.7;branch.rotation.x=(Math.random()-.5)*.5;scene.add(branch);
  }
 }
-
 for(const side of [-1,1]){
- for(let z=-9;z>=-105;z-=3.1+Math.random()*2.5){
-  makeForestTree(side*(27+Math.random()*17),z+(Math.random()-0.5)*2,5.5+Math.random()*4.5,0.28+Math.random()*0.25);
- }
+ for(let z=-9;z>=-108;z-=3+Math.random()*2.5)
+  makeForestTree(side*(26+Math.random()*18),z+(Math.random()-.5)*2,5.5+Math.random()*5,.25+Math.random()*.3);
 }
-for(let i=0;i<85;i++){
- const x=(Math.random()<0.5?-1:1)*(7+Math.random()*32);
- const z=-12-Math.random()*84;
- makeForestTree(x,z,4.5+Math.random()*5,0.22+Math.random()*0.2);
+for(let i=0;i<105;i++){
+ const x=(Math.random()<.5?-1:1)*(7+Math.random()*34);
+ const z=-12-Math.random()*87;
+ makeForestTree(x,z,4.5+Math.random()*5,.2+Math.random()*.25);
 }
 
+const grassMats=[
+ new THREE.MeshStandardMaterial({color:0x35442c,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x4c5538,roughness:1}),
+ new THREE.MeshStandardMaterial({color:0x283629,roughness:1})
+];
 function makeGrass(x,z){
- for(let i=0;i<5;i++){
-  const blade=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.45+Math.random()*0.35,4),grassMats[Math.floor(Math.random()*grassMats.length)]);
-  blade.position.set(x+(Math.random()-0.5)*0.45,0.05,z+(Math.random()-0.5)*0.45);
-  blade.rotation.z=(Math.random()-0.5)*0.55;
-  scene.add(blade);
+ for(let i=0;i<4;i++){
+  const blade=new THREE.Mesh(new THREE.ConeGeometry(.055,.25+Math.random()*.35,4),grassMats[Math.floor(Math.random()*grassMats.length)]);
+  blade.position.set(x+(Math.random()-.5)*.45,.08,z+(Math.random()-.5)*.45);
+  blade.rotation.z=(Math.random()-.5)*.6;scene.add(blade);
  }
 }
-for(let i=0;i<360;i++)makeGrass((Math.random()-0.5)*77,-8-Math.random()*90);
+for(let i=0;i<650;i++)makeGrass((Math.random()-.5)*83,-8-Math.random()*91);
 
 const bushMat=new THREE.MeshStandardMaterial({color:0x263a26,roughness:1});
 function makeBush(x,z){
- for(let i=0;i<4;i++){
-  const bush=new THREE.Mesh(new THREE.IcosahedronGeometry(0.35+Math.random()*0.3,1),bushMat);
-  bush.position.set(x+(Math.random()-0.5)*0.8,0.25+Math.random()*0.2,z+(Math.random()-0.5)*0.8);
-  bush.castShadow=true;
-  scene.add(bush);
+ for(let i=0;i<5;i++){
+  const bush=new THREE.Mesh(new THREE.IcosahedronGeometry(.25+Math.random()*.35,1),bushMat);
+  bush.position.set(x+(Math.random()-.5)*.8,.2+Math.random()*.25,z+(Math.random()-.5)*.8);
+  bush.castShadow=true;scene.add(bush);
  }
 }
-for(let i=0;i<70;i++)makeBush((Math.random()-0.5)*73,-9-Math.random()*88);
+for(let i=0;i<100;i++)makeBush((Math.random()-.5)*77,-9-Math.random()*88);
 
-const rockMat=new THREE.MeshStandardMaterial({color:0x55564b,roughness:1});
-const rockMoss=new THREE.MeshStandardMaterial({color:0x3c4932,roughness:1});
-for(let i=0;i<65;i++){
- const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(0.3+Math.random()*0.75,0),Math.random()<0.5?rockMat:rockMoss);
- rock.position.set((Math.random()-0.5)*75,0.02,-9-Math.random()*88);
- rock.scale.y=0.5+Math.random()*0.45;
- rock.rotation.set(Math.random(),Math.random()*3,Math.random());
- rock.castShadow=true;
- scene.add(rock);
+const rockMat=new THREE.MeshStandardMaterial({color:0x51564b,roughness:1});
+const rockMoss=new THREE.MeshStandardMaterial({color:0x354431,roughness:1});
+for(let i=0;i<100;i++){
+ const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.25+Math.random()*.8,1),Math.random()<.5?rockMat:rockMoss);
+ rock.position.set((Math.random()-.5)*79,.02,-9-Math.random()*88);
+ rock.scale.set(.8+Math.random(),.35+Math.random()*.45,.8+Math.random());
+ rock.rotation.set(Math.random(),Math.random()*3,Math.random());rock.castShadow=true;scene.add(rock);
 }
 
 function makeAbandonedCar(x,z,rotation=0){
- const car=box('Abandoned vehicle body',x,0.72,z,2.1,0.85,4.1,mat.dark);
- car.rotation.y=rotation;
- const roof=box('Abandoned vehicle roof',x,1.35,z-0.15,1.65,0.55,2.1,mat.concrete);
- roof.rotation.y=rotation;
- for(const dx of [-0.95,0.95])for(const dz of [-1.3,1.3]){
-  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.18,12),mat.rubber);
+ const car=box('Abandoned vehicle body',x,.72,z,2.1,.85,4.1,mat.dark);car.rotation.y=rotation;
+ const roof=box('Abandoned vehicle roof',x,1.35,z-.15,1.65,.55,2.1,mat.concrete);roof.rotation.y=rotation;
+ const glassMat=new THREE.MeshStandardMaterial({color:0x263c43,roughness:.28,metalness:.15});
+ for(const side of [-1,1]){
+  const window=box('Car side window',x+side*.83,1.42,z-.2,.035,.35,1.35,glassMat);window.rotation.y=rotation;
+ }
+ for(const dx of [-.95,.95])for(const dz of [-1.3,1.3]){
+  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,.18,12),mat.rubber);
   wheel.rotation.z=Math.PI/2;
-  wheel.position.set(x+dx,0.38,z+dz);
-  scene.add(wheel);
+  wheel.position.set(x+dx, .38,z+dz);scene.add(wheel);
  }
 }
-makeAbandonedCar(-6,-16,0.2);
-makeAbandonedCar(8,-28,-0.3);
+makeAbandonedCar(-6,-16,.2);makeAbandonedCar(8,-28,-.3);
 
 // GUARD SHACK
-box('Guard shack floor',-9,0.05,-10,4.8,0.15,4.5,mat.concrete);
-box('Guard shack rear wall',-9,1.5,-12.2,4.8,3,0.15,mat.dark);
-box('Guard shack left wall',-11.4,1.5,-10,0.15,3,4.5,mat.dark);
-box('Guard shack right wall',-6.6,1.5,-10,0.15,3,4.5,mat.dark);
-box('Guard shack roof',-9,3.05,-10,5,0.18,4.7,mat.concrete);
-box('Guard shack window',-8,1.9,-12.08,1.2,0.75,0.04,mat.glass);
-makeSupplyCrate(5,-12,0.9);
-makeSupplyCrate(6.2,-12.5,0.7);
-box('Roadside sign post',-3,1.45,-13,0.12,2.8,0.12,mat.metal);
-box('Roadside sign face',-3,2.25,-13,1.1,0.8,0.12,mat.warning);
+box('Guard shack floor',-9,.05,-10,4.8,.15,4.5,mat.concrete);
+box('Guard shack rear wall',-9,1.5,-12.2,4.8,3,.15,mat.dark);
+box('Guard shack left wall',-11.4,1.5,-10,.15,3,4.5,mat.dark);
+box('Guard shack right wall',-6.6,1.5,-10,.15,3,4.5,mat.dark);
+box('Guard shack roof',-9,3.05,-10,5,.18,4.7,mat.concrete);
+box('Guard shack window',-8,1.9,-12.08,1.2,.75,.04,mat.glass);
+makeSupplyCrate(5,-12,.9);makeSupplyCrate(6.2,-12.5,.7);
+box('Roadside sign post',-3,1.45,-13,.12,2.8,.12,mat.metal);
+box('Roadside sign face',-3,2.25,-13,1.1,.8,.12,mat.warning);
 
-// DISTANT PRISON LANDMARK
+// DISTANT PRISON
 box('Distant prison building',0,5,-58,19,10,5,mat.concrete);
-box('Prison roof',0,10.1,-58,19.4,0.3,5.4,mat.dark);
-for(let x=-8;x<=8;x+=2)box('Prison barred window',x,6,-55.42,0.9,1.2,0.04,mat.black);
-for(const x of [-6,-3,0,3,6])box('Prison entrance pillar',x,2,-54.9,0.25,4,0.25,mat.dark);
-box('Prison entrance',0,1.6,-54.8,2,3.2,0.12,mat.black);
+box('Prison roof',0,10.1,-58,19.4,.3,5.4,mat.dark);
+for(let x=-8;x<=8;x+=2)box('Prison barred window',x,6,-55.42,.9,1.2,.04,mat.black);
+for(const x of [-6,-3,0,3,6])box('Prison entrance pillar',x,2,-54.9,.25,4,.25,mat.dark);
+box('Prison entrance',0,1.6,-54.8,2,3.2,.12,mat.black);
 
 // MAINTENANCE BUILDING
-const maintenanceInside=new THREE.MeshStandardMaterial({color:0x353f40,roughness:1});
-box('Maintenance building foundation',12,0.02,-37,12,0.22,10,mat.concrete);
-box('Maintenance building back wall',12,1.8,-42,12,3.6,0.25,mat.dark);
-box('Maintenance building west wall',6,1.8,-37,0.25,3.6,10,mat.dark);
-box('Maintenance building east wall',18,1.8,-37,0.25,3.6,10,mat.dark);
-box('Maintenance front left wall',8.6,1.8,-32,5.2,3.6,0.25,mat.dark);
-box('Maintenance front right wall',15.4,1.8,-32,5.2,3.6,0.25,mat.dark);
-box('Maintenance front doorway header',12,3.25,-32,1.6,0.7,0.25,mat.dark);
-box('Maintenance roof',12,3.72,-37,12.3,0.22,10.3,mat.concrete);
-box('Maintenance sign board',12,2.85,-31.82,3.5,0.55,0.12,mat.warning);
-box('Maintenance sign lettering',12,2.86,-31.73,2.9,0.06,0.025,mat.black);
-box('Maintenance interior floor',12,0.16,-37,11.5,0.08,9.5,maintenanceInside);
-
+const maintenanceInside=new THREE.MeshStandardMaterial({color:0x303a39,roughness:1});
+box('Maintenance building foundation',12,.02,-37,12,.22,10,mat.concrete);
+box('Maintenance building back wall',12,1.8,-42,12,3.6,.25,mat.dark);
+box('Maintenance building west wall',6,1.8,-37,.25,3.6,10,mat.dark);
+box('Maintenance building east wall',18,1.8,-37,.25,3.6,10,mat.dark);
+box('Maintenance front left wall',8.6,1.8,-32,5.2,3.6,.25,mat.dark);
+box('Maintenance front right wall',15.4,1.8,-32,5.2,3.6,.25,mat.dark);
+box('Maintenance front doorway header',12,3.25,-32,1.6,.7,.25,mat.dark);
+box('Maintenance roof',12,3.72,-37,12.3,.22,10.3,mat.concrete);
+box('Maintenance sign board',12,2.85,-31.82,3.5,.55,.12,mat.warning);
+box('Maintenance sign lettering',12,2.86,-31.73,2.9,.06,.025,mat.black);
+box('Maintenance interior floor',12,.16,-37,11.5,.08,9.5,maintenanceInside);
 const maintenanceLamp=new THREE.PointLight(0x9bbac6,5,13,2);
-maintenanceLamp.position.set(12,3.05,-37);
-scene.add(maintenanceLamp);
-box('Maintenance ceiling light',12,3.48,-37,1.2,0.05,0.28,mat.light);
+maintenanceLamp.position.set(12,3.05,-37);scene.add(maintenanceLamp);
+box('Maintenance ceiling light',12,3.48,-37,1.2,.05,.28,mat.light);
+box('Maintenance workbench',9.1,.8,-39,3.1,.18,.9,mat.metal);
+box('Maintenance workbench legs',8,.4,-39,.12,.8,.12,mat.dark);
+box('Maintenance toolbox',9,1.18,-39,.75,.55,.55,mat.red);
+box('Maintenance shelf',15.5,1.65,-39,.3,2.8,3.5,mat.metal);
+box('Maintenance shelf upper',15.2,2.75,-39,.8,.08,3.5,mat.metal);
+box('Maintenance shelf lower',15.2,.95,-39,.8,.08,3.5,mat.metal);
+makeSupplyCrate(14.6,-40,.65);makeSupplyCrate(14.7,-36.8,.55);
+box('Maintenance generator',11.7,.72,-34.6,1.35,1.35,.9,mat.dark);
+box('Generator control panel',11.7,.95,-34.12,.7,.42,.05,mat.black);
+box('Generator warning light',11.7,1.04,-34.08,.12,.08,.025,mat.red);
+box('Maintenance locker',7.4,1.05,-35.3,.75,2.1,.8,mat.dark);
+box('Maintenance locker handle',7.4,1.1,-34.87,.08,.22,.04,mat.metal);
+box('Maintenance pipe horizontal',12,2.65,-41.55,7.5,.14,.14,mat.metal);
+for(const x of [9,12,15])box('Maintenance pipe bracket',x,2.48,-41.55,.12,.38,.2,mat.dark);
 
-box('Maintenance workbench',9.1,0.8,-39,3.1,0.18,0.9,mat.metal);
-box('Maintenance workbench legs',8,0.4,-39,0.12,0.8,0.12,mat.dark);
-box('Maintenance toolbox',9,1.18,-39,0.75,0.55,0.55,mat.red);
-box('Maintenance shelf',15.5,1.65,-39,0.3,2.8,3.5,mat.metal);
-box('Maintenance shelf upper',15.2,2.75,-39,0.8,0.08,3.5,mat.metal);
-box('Maintenance shelf lower',15.2,0.95,-39,0.8,0.08,3.5,mat.metal);
-makeSupplyCrate(14.6,-40,0.65);
-makeSupplyCrate(14.7,-36.8,0.55);
-
-box('Maintenance generator',11.7,0.72,-34.6,1.35,1.35,0.9,mat.dark);
-box('Generator control panel',11.7,0.95,-34.12,0.7,0.42,0.05,mat.black);
-box('Generator warning light',11.7,1.04,-34.08,0.12,0.08,0.025,mat.red);
-box('Maintenance locker',7.4,1.05,-35.3,0.75,2.1,0.8,mat.dark);
-box('Maintenance locker handle',7.4,1.1,-34.87,0.08,0.22,0.04,mat.metal);
-box('Maintenance pipe horizontal',12,2.65,-41.55,7.5,0.14,0.14,mat.metal);
-for(const x of [9,12,15])box('Maintenance pipe bracket',x,2.48,-41.55,0.12,0.38,0.2,mat.dark);
-
-const fuseItem=box('Loose fuse',9.1,1.03,-39,0.22,0.08,0.12,new THREE.MeshStandardMaterial({color:0xf0d77b,emissive:0x5b4510}));
-const logbookItem=box('Maintenance logbook',15.15,1.08,-39,0.38,0.06,0.28,mat.paper);
-const photographItem=box('Old photograph',7.4,1.4,-35.3,0.18,0.02,0.24,mat.paper);
-const maintenanceKeyItem=box('Rusty maintenance key',11.7,1.47,-34.6,0.3,0.045,0.09,new THREE.MeshStandardMaterial({color:0xc0a36a,metalness:0.65,roughness:0.35}));
-const noteItem=box('Ranger note',12,0.25,-30.5,0.42,0.025,0.32,mat.paper);
-
+const fuseItem=box('Loose fuse',9.1,1.03,-39,.22,.08,.12,new THREE.MeshStandardMaterial({color:0xf0d77b,emissive:0x5b4510}));
+const logbookItem=box('Maintenance logbook',15.15,1.08,-39,.38,.06,.28,mat.paper);
+const photographItem=box('Old photograph',7.4,1.4,-35.3,.18,.02,.24,mat.paper);
+const maintenanceKeyItem=box('Rusty maintenance key',11.7,1.47,-34.6,.3,.045,.09,new THREE.MeshStandardMaterial({color:0xc0a36a,metalness:.65,roughness:.35}));
+const noteItem=box('Ranger note',12,.25,-30.5,.42,.025,.32,mat.paper);
 let fuseFound=false,logbookFound=false,photoFound=false,maintenanceKeyFound=false,noteFound=false,generatorStarted=false;
 
-// KEYCARD IN THE STORAGE ROOM
-const keycard=box('Security keycard',-4.9,1.12,22.35,0.28,0.035,0.18,new THREE.MeshStandardMaterial({color:0x7fd8dc,emissive:0x15383a,metalness:0.25,roughness:0.35}));
-const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,0.19,0.012,0.025,new THREE.MeshBasicMaterial({color:0xf3fbff}));
+// KEYCARD AND FLASHLIGHT
+const keycard=box('Security keycard',-4.9,1.12,22.35,.28,.035,.18,new THREE.MeshStandardMaterial({color:0x7fd8dc,emissive:0x15383a,metalness:.25,roughness:.35}));
+const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,.19,.012,.025,new THREE.MeshBasicMaterial({color:0xf3fbff}));
 
 const keys={};
-let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,keycardCollected=false,exitUnlocked=false,started=false,lastPadButton=false;
-const player={x:0,z:4.7,speed:2.7};
-const hint=document.getElementById('hint');
-const overlay=document.getElementById('overlay');
-const lightState=document.getElementById('lightState');
-
-const flashlightItem=new THREE.Group();
-const flashlightBody=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.085,0.42,12),new THREE.MeshStandardMaterial({color:0x252b30,metalness:0.8,roughness:0.3}));
-flashlightBody.rotation.x=Math.PI/2;
-flashlightItem.add(flashlightBody);
-const lens=new THREE.Mesh(new THREE.CircleGeometry(0.065,12),new THREE.MeshStandardMaterial({color:0xffe9a6,emissive:0x665020}));
-lens.position.z=-0.215;
-flashlightItem.add(lens);
-flashlightItem.position.set(-3.7,1.18,-3.1);
-flashlightItem.rotation.x=0.15;
-scene.add(flashlightItem);
-
-function updateCamera(){
- camera.rotation.order='YXZ';
- camera.rotation.y=yaw;
- camera.rotation.x=pitch;
- camera.position.set(player.x,1.65,player.z);
-}
-
-function toggleFlashlight(){
- if(!flashlightCollected){hint.textContent='Find the flashlight on the cabinet first.';return;}
- flashlightOn=!flashlightOn;
- beam.intensity=flashlightOn?38:0;
- lightState.textContent=flashlightOn?'ON':'OFF';
- hint.textContent=flashlightOn?'The beam cuts through the dust.':'The room sinks back into darkness.';
-}
-
-function tryInteract(){
- if(!started)return;
- const near=(obj,r=1.8)=>Math.hypot(player.x-obj.position.x,player.z-obj.position.z)<r;
-
- if(!fuseFound&&near(fuseItem)){fuseFound=true;scene.remove(fuseItem);hint.textContent='You found a spare fuse. The generator may need it.';return;}
- if(!logbookFound&&near(logbookItem)){logbookFound=true;scene.remove(logbookItem);hint.textContent='Maintenance log: “Power failed after the lower ward was sealed. Do not restore it alone.”';return;}
- if(!photoFound&&near(photographItem)){photoFound=true;scene.remove(photographItem);hint.textContent='An old photograph shows hospital staff beside a forest access gate. One face has been scratched out.';return;}
- if(!maintenanceKeyFound&&near(maintenanceKeyItem)){maintenanceKeyFound=true;scene.remove(maintenanceKeyItem);hint.textContent='Rusty maintenance key acquired. There may be a locked service cabinet.';return;}
- if(!noteFound&&near(noteItem)){noteFound=true;scene.remove(noteItem);hint.textContent='Ranger note: “The prison lights still flicker after midnight. The hospital is not the only place abandoned.”';return;}
-
- if(Math.hypot(player.x-11.7,player.z+34.6)<2.2){
-  if(!fuseFound){hint.textContent='The generator is missing a fuse. Search the workbench.';return;}
-  if(!generatorStarted){
-   generatorStarted=true;
-   maintenanceLamp.intensity=12;
-   hint.textContent='The generator coughs to life. Something deep in the forest answers with a distant metallic bang.';
-  }else hint.textContent='The generator is running, but you do not know what it powered.';
-  return;
- }
-
- const kd=Math.hypot(player.x-keycard.position.x,player.z-keycard.position.z);
- if(!keycardCollected&&kd<1.7){
-  keycardCollected=true;
-  scene.remove(keycard);
-  scene.remove(keycardMark);
-  document.getElementById('keyState').textContent='ACQUIRED';
-  hint.textContent='Security keycard acquired. Find the locked rear exit.';
-  return;
- }
-
- if(Math.abs(player.x)<2.1&&Math.abs(player.z+5.2)<2.1){
-  if(!keycardCollected){hint.textContent='ACCESS DENIED. Find the security keycard in the Storage Room.';return;}
-  if(!exitUnlocked){
-   exitUnlocked=true;
-   keypadLight.material=new THREE.MeshBasicMaterial({color:0x42ff9a});
-   exitDoor.position.x=2.5;
-   hint.textContent='ACCESS GRANTED. Exit unlocked. Head outside toward the road and prison.';
-  }else hint.textContent='The exit is unlocked. Head outside toward the road.';
-  return;
- }
-
- if(!flashlightCollected){
-  const d=Math.hypot(player.x-flashlightItem.position.x,player.z-flashlightItem.position.z);
-  if(d<1.5){
-   flashlightCollected=true;
-   scene.remove(flashlightItem);
-   lightState.textContent='OFF';
-   hint.textContent='Flashlight acquired! Press F to turn it on.';
-   return;
-  }
- }
-
- hint.textContent='Nothing nearby. Search the maintenance building for clues, a fuse, a key, and a logbook.';
-}
-
-function startGame(){
- if(started)return;
- started=true;
- overlay.style.display='none';
- hint.textContent='Find the security keycard in the Storage Room. Once outside, investigate the maintenance building.';
- renderer.domElement.requestPointerLock?.();
-}
-
-document.getElementById('start').addEventListener('click',startGame);
-renderer.domElement.addEventListener('click',()=>{if(started&&document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.();});
-
-document.addEventListener('mousemove',e=>{
- if(!started||document.pointerLockElement!==renderer.domElement)return;
- yaw-=e.movementX*0.0022;
- pitch=Math.max(-1.35,Math.min(1.35,pitch-e.movementY*0.0022));
- updateCamera();
-});
-
-document.addEventListener('keydown',e=>{
- keys[e.code]=true;
- if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code))e.preventDefault();
- if(e.code==='KeyE'&&!e.repeat)tryInteract();
- if(e.code==='KeyF'&&!e.repeat)toggleFlashlight();
- if(e.code==='Escape'&&started)hint.textContent='Click the game to resume mouse-look.';
-});
-document.addEventListener('keyup',e=>keys[e.code]=false);
-document.addEventListener('pointerlockchange',()=>{if(started&&document.pointerLockElement!==renderer.domElement)hint.textContent='Click the game to resume mouse-look.';});
-
-function movePlayer(dt,gx=0,gy=0){
- let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-gy;
- let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+gx;
- const len=Math.hypot(f,s);
- if(len>1){f/=len;s/=len;}
- const speed=player.speed*((keys.ShiftLeft||keys.ShiftRight)?1.65:1)*dt;
- const dx=(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed;
- const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
-
- function canOccupy(x,z){
-  if(z<5.8){
-   if(z>=-5.45)return x>=-4.55&&x<=4.55;
-   if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
-  }
-
-  if(z < -7.0){
-   if(!exitUnlocked)return false;
-   const islandX=x/94;
-   const islandZ=(z+35)/114;
-   return islandX*islandX+islandZ*islandZ<=1;
-  }
-
-  if(z>=5.8&&z<=31.7){
-   if(x>=-1.78&&x<=1.78)return true;
-   if(x< -1.78&&x>=-6.0)return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
-   if(x>1.78&&x<=6.0)return z>=14.85&&z<=17.15;
-  }
-  return false;
- }
-
- let nx=player.x+dx;
- if(canOccupy(nx,player.z))player.x=nx;
- nx=player.x;
- const nz=player.z+dz;
- if(canOccupy(nx,nz))player.z=nz;
-
- player.x=Math.max(exitUnlocked?-91:-6.0,Math.min(exitUnlocked?91:6.0,player.x));
- player.z=Math.max(exitUnlocked?-148.0:-5.45,Math.min(31.7,player.z));
- updateCamera();
-}
-
-function gamepadInput(dt){
- const pads=navigator.getGamepads?navigator.getGamepads():[];
- const pad=[...pads].find(Boolean);
- if(!pad)return false;
- const axis=i=>Math.abs(pad.axes[i]||0)>0.16?pad.axes[i]:0;
- yaw-=axis(2)*2.2*dt;
- pitch=Math.max(-1.35,Math.min(1.35,pitch+axis(3)*1.7*dt));
- movePlayer(dt,axis(0),axis(1));
- const pressed=!!pad.buttons[0]?.pressed;
- if(pressed&&!lastPadButton)toggleFlashlight();
- lastPadButton=pressed;
- return true;
-}
-
-const clock = new THREE.Clock();
-let elapsed=0;
-
-function animate(){
- requestAnimationFrame(animate);
- const dt=Math.min(clock.getDelta(),0.04);
- elapsed+=dt;
-
- // Fog gradually clears toward the mainland.
- const mainlandApproach=Math.max(0,Math.min(1,(-player.z-105)/55));
- scene.fog.density=0.0032-mainlandApproach*0.0021;
-
- oceanSurfaces.forEach((surface,i)=>{
-  surface.position.y=-0.48+Math.sin(elapsed*0.7+i)*0.025;
- });
-
- if(started){if(!gamepadInput(dt))movePlayer(dt);}
- mainLight.intensity=25+Math.sin(elapsed*7)*0.3;
- renderer.render(scene,camera);
-}
-
-updateCamera();
-animate();
-
-window.addEventListener('resize',()=>{
- camera.aspect=innerWidth/innerHeight;
- camera.updateProjectionMatrix();
- renderer.setSize(innerWidth,innerHeight);
-});
-</script>
-</body>
-</html>
+let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,keycardCollected=false
