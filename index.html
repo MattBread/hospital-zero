@@ -321,7 +321,94 @@ makeWallNotice(-6.28,2.2,23.0,Math.PI/2);
 makeWallStain(-6.28,1.45,21.2,0.025,0.65,0.85,Math.PI/2);
 
 // OUTDOOR FOREST
-box('Forest ground',0,-0.28,-35,58,0.25,62,mat.outdoorFloor);
+
+const oceanMat = new THREE.MeshStandardMaterial({
+  color: 0x123d59,
+  roughness: 0.25,
+  metalness: 0.35
+});
+
+const beachMat = new THREE.MeshStandardMaterial({
+  color: 0x9b8a62,
+  roughness: 1
+});
+
+// Deep ocean surrounding the island
+const ocean = new THREE.Mesh(
+  new THREE.PlaneGeometry(2000, 2000),
+  oceanMat
+);
+ocean.rotation.x = -Math.PI / 2;
+ocean.position.set(0, -0.48, -35);
+scene.add(ocean);
+
+// A second distant ocean surface for a continuous horizon
+const distantWater = new THREE.Mesh(
+  new THREE.PlaneGeometry(4000, 4000),
+  oceanMat
+);
+distantWater.rotation.x = -Math.PI / 2;
+distantWater.position.set(0, -0.52, -35);
+scene.add(distantWater);
+
+// Sandy shoreline around the island
+const beach = new THREE.Mesh(
+  new THREE.CircleGeometry(1, 96),
+  beachMat
+);
+beach.rotation.x = -Math.PI / 2;
+beach.scale.set(64, 73, 1);
+beach.position.set(0, -0.24, -35);
+scene.add(beach);
+
+// Main island land, preserving the forest terrain
+const islandGround = new THREE.Mesh(
+  new THREE.CircleGeometry(1, 96),
+  mat.outdoorFloor
+);
+islandGround.rotation.x = -Math.PI / 2;
+islandGround.scale.set(60, 69, 1);
+islandGround.position.set(0, -0.10, -35);
+islandGround.receiveShadow = true;
+scene.add(islandGround);
+
+// Jagged rocks along the coast
+const shoreRockMat = new THREE.MeshStandardMaterial({
+  color: 0x454943,
+  roughness: 1
+});
+
+for (let i = 0; i < 100; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 61 + Math.random() * 4;
+  const rock = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      0.5 + Math.random() * 1.5,
+      0
+    ),
+    shoreRockMat
+  );
+
+  rock.position.set(
+    Math.cos(angle) * radius,
+    -0.05 + Math.random() * 0.15,
+    -35 + Math.sin(angle) * radius * 1.15
+  );
+
+  rock.scale.y = 0.5 + Math.random();
+  rock.rotation.set(
+    Math.random(),
+    Math.random(),
+    Math.random()
+  );
+
+  scene.add(rock);
+}
+
+const oceanSurfaces = [ocean, distantWater];
+
+box('Forest ground', 0, -0.28, -35, 58, 0.25, 62, mat.outdoorFloor);
+
 const forestSoil = new THREE.MeshStandardMaterial({color:0x292c22, roughness:1});
 const mossMat = new THREE.MeshStandardMaterial({color:0x35402a, roughness:1});
 const grassMats = [
@@ -693,13 +780,38 @@ function movePlayer(dt,gx=0,gy=0){
  let nx=player.x+dx;
  let nz=player.z;
 
- function canOccupy(x,z){
-  // Patient room and locked exit threshold
+ 
+function canOccupy(x,z){
+  // Hospital rooms and exit threshold
   if(z<5.8){
-   if(z>=-5.45)return x>=-4.55&&x<=4.55;
-   if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
-   return exitUnlocked&&x>=-27&&x<=27&&z>=-63.5;
+    if(z>=-5.45)return x>=-4.55&&x<=4.55;
+    if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
   }
+
+  // Island shoreline boundary outside the hospital
+  if(z < -7.0){
+    if(!exitUnlocked)return false;
+
+    const islandX = x / 58;
+    const islandZ = (z + 35) / 66;
+
+    return islandX * islandX + islandZ * islandZ <= 1;
+  }
+
+  // Main corridor, with side-room openings
+  if(z>=5.8&&z<=31.7){
+    if(x>=-1.78&&x<=1.78)return true;
+    if(x< -1.78&&x>=-6.0){
+      return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
+    }
+    if(x>1.78&&x<=6.0){
+      return z>=14.85&&z<=17.15;
+    }
+  }
+
+  return false;
+}
+
 
   // Outdoor area beyond the hospital
   if(z< -7.0)return exitUnlocked&&x>=-27&&x<=27&&z>=-63.5;
@@ -722,8 +834,8 @@ function movePlayer(dt,gx=0,gy=0){
  nz=player.z+dz;
  if(canOccupy(nx,nz))player.z=nz;
 
- player.x=Math.max(exitUnlocked?-26.5:-6.0,Math.min(exitUnlocked?26.5:6.0,player.x));
- player.z=Math.max(exitUnlocked?-63.0:-5.45,Math.min(31.7,player.z));
+ player.x=Math.max(exitUnlocked?-57:-6.0,Math.min(exitUnlocked?57:6.0,player.x));
+ player.z=Math.max(exitUnlocked?-99.0:-5.45,Math.min(31.7,player.z));
  updateCamera();
 }
 
@@ -747,6 +859,9 @@ function animate(){
  requestAnimationFrame(animate);
  const dt=Math.min(clock.getDelta(),0.04);
  elapsed+=dt;
+ oceanSurfaces.forEach((surface,i)=>{
+  surface.position.y=-0.48+Math.sin(elapsed*0.7+i)*0.025;
+}); 
  if(started){
   if(!gamepadInput(dt))movePlayer(dt);
  }
