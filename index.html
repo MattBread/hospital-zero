@@ -680,6 +680,7 @@ document.addEventListener('mousemove',e=>{
 
 document.addEventListener('keydown',e=>{
  keys[e.code]=true;
+  if(e.code==='Enter'&&!e.repeat&&!started)startGame();
  if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code))e.preventDefault();
  if(e.code==='KeyE'&&!e.repeat)tryInteract();
  if(e.code==='KeyF'&&!e.repeat)toggleFlashlight();
