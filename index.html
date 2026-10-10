@@ -766,8 +766,8 @@ document.addEventListener('pointerlockchange',()=>{
   hint.textContent='Click the game to resume mouse-look.';
 });
 
-// MOVEMENT AND ROOM ACCESS
 
+ // MOVEMENT AND ROOM ACCESS
 
 function movePlayer(dt,gx=0,gy=0){
  let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-gy;
@@ -780,78 +780,14 @@ function movePlayer(dt,gx=0,gy=0){
  const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
 
  function canOccupy(x,z){
+  // Hospital rooms and exit threshold
   if(z<5.8){
    if(z>=-5.45)return x>=-4.55&&x<=4.55;
    if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
   }
 
-  if(z< -7.0){
-   if(!exitUnlocked)return false;
-   const islandX=x/58;
-   const islandZ=(z+35)/66;
-   return islandX*islandX+islandZ*islandZ<=1;
-  }
-
-  if(z>=5.8&&z<=31.7){
-   if(x>=-1.78&&x<=1.78)return true;
-   if(x< -1.78&&x>=-6.0){
-    return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
-   }
-   if(x>1.78&&x<=6.0){
-    return z>=14.85&&z<=17.15;
-   }
-  }
-
-  return false;
- }
-
-  
- let nx=player.x+dx;
- if(canOccupy(nx,player.z))player.x=nx;
-
- nx=player.x;
- const nz=player.z+dz;
- if(canOccupy(nx,nz))player.z=nz;
-
- player.x=Math.max(exitUnlocked?-57:-6.0,Math.min(exitUnlocked?57:6.0,player.x));
- player.z=Math.max(exitUnlocked?-99.0:-5.45,Math.min(31.7,player.z));
- updateCamera();
-}
-
-function gamepadInput(dt){
- const pads=navigator.getGamepads?navigator.getGamepads():[];
- const pad=pads[0];
- if(!pad)return false;
-
- const dead=0.18;
- const axis=i=>Math.abs(pad.axes[i]||0)>dead?pad.axes[i]:0;
- const gx=axis(0);
- const gy=axis(1);
- movePlayer(dt,gx,gy);
-
- if(pad.buttons[0]&&pad.buttons[0].pressed){
-  interact();
- }
-
- return true;
-}
-
-
- let nx=player.x+dx;
- if(canOccupy(nx,player.z))player.x=nx;
-
- nx=player.x;
- const nz=player.z+dz;
- if(canOccupy(nx,nz))player.z=nz;
-
- player.x=Math.max(exitUnlocked?-57:-6.0,Math.min(exitUnlocked?57:6.0,player.x));
- player.z=Math.max(exitUnlocked?-99.0:-5.45,Math.min(31.7,player.z));
- updateCamera();
-}
-
-
-  // Ocean-surrounded island boundary
-  if(z< -7.0){
+  // Island surrounded by ocean
+  if(z < -7.0){
    if(!exitUnlocked)return false;
    const islandX=x/58;
    const islandZ=(z+35)/66;
@@ -884,92 +820,22 @@ function gamepadInput(dt){
  updateCamera();
 }
 
- let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-gy;
- let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+gx;
- const len=Math.hypot(f,s);
- if(len>1){f/=len;s/=len;}
-
- const speed=player.speed*((keys.ShiftLeft||keys.ShiftRight)?1.65:1)*dt;
- const dx=(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed;
- const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
-
- let nx=player.x+dx;
- let nz=player.z;
-
- 
-function canOccupy(x,z){
-  // Hospital rooms and exit threshold
-  if(z<5.8){
-    if(z>=-5.45)return x>=-4.55&&x<=4.55;
-    if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
-  }
-
-  // Island shoreline boundary outside the hospital
-  if(z < -7.0){
-    if(!exitUnlocked)return false;
-
-    const islandX = x / 58;
-    const islandZ = (z + 35) / 66;
-
-    return islandX * islandX + islandZ * islandZ <= 1;
-  }
-
-  // Main corridor, with side-room openings
-  if(z>=5.8&&z<=31.7){
-    if(x>=-1.78&&x<=1.78)return true;
-    if(x< -1.78&&x>=-6.0){
-      return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
-    }
-    if(x>1.78&&x<=6.0){
-      return z>=14.85&&z<=17.15;
-    }
-  }
-
-  return false;
-}
-
-
-  // Outdoor area beyond the hospital
-  if(z< -7.0)return exitUnlocked&&x>=-27&&x<=27&&z>=-63.5;
-
-  // Main corridor, with side-room openings
-  if(z>=5.8&&z<=31.7){
-   if(x>=-1.78&&x<=1.78)return true;
-   if(x< -1.78&&x>=-6.0){
-    return (z>=8.85&&z<=11.15)||(z>=20.85&&z<=23.15);
-   }
-   if(x>1.78&&x<=6.0){
-    return z>=14.85&&z<=17.15;
-   }
-  }
-  return false;
- }
-
- if(canOccupy(nx,player.z))player.x=nx;
- nx=player.x;
- nz=player.z+dz;
- if(canOccupy(nx,nz))player.z=nz;
-
- player.x=Math.max(exitUnlocked?-57:-6.0,Math.min(exitUnlocked?57:6.0,player.x));
- player.z=Math.max(exitUnlocked?-99.0:-5.45,Math.min(31.7,player.z));
- updateCamera();
-}
-
 function gamepadInput(dt){
  const pads=navigator.getGamepads?navigator.getGamepads():[];
  const pad=[...pads].find(Boolean);
  if(!pad)return false;
+
  const axis=i=>Math.abs(pad.axes[i]||0)>0.16?pad.axes[i]:0;
  yaw-=axis(2)*2.2*dt;
  pitch=Math.max(-1.35,Math.min(1.35,pitch+axis(3)*1.7*dt));
  movePlayer(dt,axis(0),axis(1));
+
  const pressed=!!pad.buttons[0]?.pressed;
  if(pressed&&!lastPadButton)toggleFlashlight();
  lastPadButton=pressed;
  return true;
 }
 
-const clock=new THREE.Clock();
 let elapsed=0;
 function animate(){
  requestAnimationFrame(animate);
