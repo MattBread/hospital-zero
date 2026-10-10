@@ -103,7 +103,27 @@ const mat={
  rubber:new THREE.MeshStandardMaterial({color:0x202529,roughness:0.9}),
  warning:new THREE.MeshStandardMaterial({color:0xb4a16b,roughness:0.9})
 };
+```js
+// GRAPHICS-ONLY VISUAL POLISH — existing materials and objects only
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMappingExposure = 1.1;
 
+scene.background.set(0x121d24);
+scene.fog.color.set(0x121d24);
+
+// Cooler, more weathered hospital surfaces
+mat.floor.color.set(0x454f55);
+mat.wall.color.set(0x77858c);
+mat.dark.color.set(0x303b42);
+mat.concrete.color.set(0x555e60);
+mat.metal.color.set(0x77858a);
+mat.bed.color.set(0xa5afb3);
+mat.sheet.color.set(0xcbd2cf);
+mat.glass.color.set(0x405d69);
+mat.outdoorFloor.color.set(0x424a3d);
+mat.foliage.color.set(0x1c3023);
+mat.stain.color.set(0x505a5c);
+```
 function box(name,x,y,z,sx,sy,sz,material){
  const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),material);
  m.name=name;
