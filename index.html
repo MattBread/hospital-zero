@@ -774,9 +774,49 @@ window.addEventListener('resize',()=>{
  renderer.setSize(innerWidth,innerHeight);
 });
   
+
   // ===== HOSPITAL ZERO: SHORELINE EXPANSION =====
-  // Shoreline landmarks will be added here.
-  console.log("Hospital Zero shoreline expansion loaded.");
+  // Build the first shoreline landmark: a wooden dock.
+
+  const shorelineDock = new THREE.Group();
+
+  // Dock planks
+  for (let i = 0; i < 12; i++) {
+    const plankGeometry = new THREE.BoxGeometry(1.5, 0.16, 0.7);
+    const plankMaterial = new THREE.MeshStandardMaterial({
+      color: 0x59402b,
+      roughness: 0.95
+    });
+
+    const plank = new THREE.Mesh(plankGeometry, plankMaterial);
+    plank.position.set(0, 0, i * 0.72);
+    plank.castShadow = true;
+    plank.receiveShadow = true;
+    shorelineDock.add(plank);
+  }
+
+  // Dock support posts
+  for (let i = 0; i < 7; i++) {
+    for (const x of [-0.65, 0.65]) {
+      const postGeometry = new THREE.BoxGeometry(0.18, 1.4, 0.18);
+      const postMaterial = new THREE.MeshStandardMaterial({
+        color: 0x38291e,
+        roughness: 1
+      });
+
+      const post = new THREE.Mesh(postGeometry, postMaterial);
+      post.position.set(x, -0.35, i * 1.44);
+      post.castShadow = true;
+      shorelineDock.add(post);
+    }
+  }
+
+  // Add the dock to the existing scene.
+  shorelineDock.position.set(5, 0.1, -130);
+  scene.add(shorelineDock);
+
+  console.log("Hospital Zero shoreline dock loaded.");
+  
 
 </script>
 </body>
