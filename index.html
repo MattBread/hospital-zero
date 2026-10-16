@@ -574,7 +574,7 @@ const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,0.19,0.012,0.025,new THRE
 
 const keys={};
 let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,keycardCollected=false,exitUnlocked=false,started=false,lastPadButton=false;
-const player={x:0,z:4.7,speed:2.7};
+const player={x:0,z:4.7,speed:3.25};
 const hint=document.getElementById('hint');
 const overlay=document.getElementById('overlay');
 const lightState=document.getElementById('lightState');
@@ -594,7 +594,7 @@ function updateCamera(){
  camera.rotation.order='YXZ';
  camera.rotation.y=yaw;
  camera.rotation.x=pitch;
- camera.position.set(player.x,1.65,player.z);
+ camera.position.set(player.x,1.65+(addedFloor===1?addedFloorY.upper:addedFloor===-1?addedFloorY.basement:0),player.z);
 }
 
 function toggleFlashlight(){
@@ -607,6 +607,13 @@ function toggleFlashlight(){
 
 function tryInteract(){
  if(!started)return;
+ const dGround=Math.hypot(player.x,player.z-29.2);
+ const dBasement=Math.hypot(player.x,player.z-27.8);
+ if(addedFloor===0&&dGround<2.5){addedFloor=1;player.x=0;player.z=29.2;hint.textContent='Second floor. Press E at the stairwell to return.';updateCamera();return;}
+ if(addedFloor===1&&dGround<2.5){addedFloor=0;player.x=0;player.z=29.2;hint.textContent='Back on the ground floor.';updateCamera();return;}
+ if(addedFloor===0&&dBasement<2.5){addedFloor=-1;player.x=0;player.z=27.8;hint.textContent='You descended into the underworld. Explore freely; no key is required.';updateCamera();return;}
+ if(addedFloor===-1&&dBasement<2.5){addedFloor=0;player.x=0;player.z=27.8;hint.textContent='You returned to the hospital.';updateCamera();return;}
+ if(addedFloor!==0){hint.textContent='Explore this floor. Find the stairwell and press E to change floors.';return;}
  const near=(obj,r=1.8)=>Math.hypot(player.x-obj.position.x,player.z-obj.position.z)<r;
 
  if(!fuseFound&&near(fuseItem)){fuseFound=true;scene.remove(fuseItem);hint.textContent='You found a spare fuse. The generator may need it.';return;}
@@ -699,6 +706,8 @@ function movePlayer(dt,gx=0,gy=0){
  const dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed;
 
  function canOccupy(x,z){
+  if(addedFloor===1)return x>=-40&&x<=40&&z>=-93&&z<=33;
+  if(addedFloor===-1)return x>=-89&&x<=89&&z>=-145&&z<=29;
   if(z<5.8){
    if(z>=-5.45)return x>=-4.55&&x<=4.55;
    if(z>=-7.0)return exitUnlocked&&Math.abs(x)<1.15;
@@ -725,8 +734,9 @@ function movePlayer(dt,gx=0,gy=0){
  const nz=player.z+dz;
  if(canOccupy(nx,nz))player.z=nz;
 
- player.x=Math.max(exitUnlocked?-91:-6.0,Math.min(exitUnlocked?91:6.0,player.x));
- player.z=Math.max(exitUnlocked?-148.0:-5.45,Math.min(31.7,player.z));
+ if(addedFloor===1){player.x=Math.max(-40,Math.min(40,player.x));player.z=Math.max(-93,Math.min(33,player.z));}
+ else if(addedFloor===-1){player.x=Math.max(-89,Math.min(89,player.x));player.z=Math.max(-145,Math.min(29,player.z));}
+ else {player.x=Math.max(exitUnlocked?-91:-6.0,Math.min(exitUnlocked?91:6.0,player.x));player.z=Math.max(exitUnlocked?-148.0:-5.45,Math.min(31.7,player.z));}
  updateCamera();
 }
 
@@ -775,14 +785,107 @@ window.addEventListener('resize',()=>{
 });
   
 
-  // ===== HOSPITAL ZERO: SHORELINE EXPANSION =====
-  // Build the first shoreline landmark: a wooden dock.
+
+  // ===== EXPANSION TEST BUILD: SECOND STORY + FULL-ISLAND UNDERWORLD =====
+  // New levels use their own floor heights and collision bounds. No key required.
+  let addedFloor = 0; // 0 ground, 1 upper story, -1 underworld
+  const addedFloorY = {upper:4.6, basement:-8.2};
+  const floorBox = (name,x,y,z,sx,sy,sz,material,offset) => box(name,x,y+offset,z,sx,sy,sz,material);
+  const stairPoint = {x:0,z:29.2};
+  const basementPoint = {x:0,z:27.8};
+
+  // Large second-story deck with perimeter walls, hallway, patient rooms and stairs.
+  const uy=addedFloorY.upper;
+  floorBox('Second story walkable floor',0,-0.12,-30,82,0.24,128,mat.floor,uy);
+  floorBox('Second story ceiling',0,3.8,-30,82,0.2,128,mat.dark,uy);
+  floorBox('Second story west wall',-41,1.8,-30,0.25,3.8,128,mat.wall,uy);
+  floorBox('Second story east wall',41,1.8,-30,0.25,3.8,128,mat.wall,uy);
+  floorBox('Second story north wall',0,1.8,-94,82,3.8,0.25,mat.wall,uy);
+  floorBox('Second story south wall',0,1.8,34,82,3.8,0.25,mat.wall,uy);
+  floorBox('Second story hall west wall',-3.2,1.8,-30,0.2,3.8,120,mat.wall,uy);
+  floorBox('Second story hall east wall',3.2,1.8,-30,0.2,3.8,120,mat.wall,uy);
+  function upperRoom(name,x,z){
+    floorBox(name+' back wall',x,1.8,z-6,15,3.8,0.2,mat.wall,uy);
+    floorBox(name+' outer wall',x-7.5,1.8,z,0.2,3.8,12,mat.wall,uy);
+    floorBox(name+' inner wall A',x+7.5,1.8,z-3.7,0.2,3.8,4.6,mat.wall,uy);
+    floorBox(name+' inner wall B',x+7.5,1.8,z+3.7,0.2,3.8,4.6,mat.wall,uy);
+    floorBox(name+' bed',x-2,0.48,z,1.5,0.18,2.6,mat.metal,uy);
+    floorBox(name+' mattress',x-2,0.61,z,1.4,0.14,2.5,mat.bed,uy);
+    floorBox(name+' pillow',x-2,0.73,z-0.85,0.7,0.12,0.4,mat.sheet,uy);
+    floorBox(name+' wall television',x+7.25,2.25,z,0.08,0.9,1.4,mat.black,uy);
+    floorBox(name+' TV screen',x+7.19,2.25,z,0.035,0.68,1.15,mat.glass,uy);
+    floorBox(name+' cabinet',x+2,0.5,z-3.8,0.8,0.9,0.7,mat.dark,uy);
+  }
+  upperRoom('Upper patient room A',-19,-12);
+  upperRoom('Upper patient room B',19,-12);
+  upperRoom('Upper patient room C',-19,10);
+  upperRoom('Upper patient room D',19,10);
+  for(let i=0;i<12;i++) floorBox('Upper stair step '+i,0,0.16+i*0.34,29.2-i*0.32,2.8,0.32,0.65,mat.concrete,0);
+
+  // Full island-sized underground world: 180 x 176 units with a corridor grid.
+  const by=addedFloorY.basement;
+  floorBox('Full island underworld floor',0,-0.18,-58,180,0.36,176,mat.concrete,by);
+  floorBox('Underworld ceiling',0,4.2,-58,180,0.3,176,mat.dark,by);
+  floorBox('Underworld north wall',0,1.8,30,180,3.8,0.5,mat.concrete,by);
+  floorBox('Underworld south wall',0,1.8,-146,180,3.8,0.5,mat.concrete,by);
+  floorBox('Underworld west wall',-90,1.8,-58,0.5,3.8,176,mat.concrete,by);
+  floorBox('Underworld east wall',90,1.8,-58,0.5,3.8,176,mat.concrete,by);
+  for(const z of [-128,-106,-84,-62,-40,-18,4]){
+    floorBox('Underworld cross wall '+z,0,1.8,z,150,3.8,0.28,mat.dark,by);
+    // Central doorway gaps remain open.
+    floorBox('Underworld doorway trim L '+z,-4.8,1.8,z,0.5,3.8,0.3,mat.dark,by);
+    floorBox('Underworld doorway trim R '+z,4.8,1.8,z,0.5,3.8,0.3,mat.dark,by);
+  }
+  // Living room: couch, TV, cabinet and rug.
+  floorBox('Underworld living room wall',-55,1.8,-20,30,3.8,0.25,mat.wall,by);
+  floorBox('Living room couch seat',-55,0.4,-28,4.2,0.55,1.25,mat.dark,by);
+  floorBox('Living room couch back',-55,0.95,-28.5,4.2,0.8,0.3,mat.dark,by);
+  floorBox('Living room couch arm L',-57.1,0.7,-28,0.35,0.7,1.3,mat.dark,by);
+  floorBox('Living room couch arm R',-52.9,0.7,-28,0.35,0.7,1.3,mat.dark,by);
+  floorBox('Living room TV cabinet',-55,0.45,-12,3.2,0.75,0.7,mat.crate,by);
+  floorBox('Living room wall TV',-55,2.3,-12.4,2.8,1.55,0.16,mat.black,by);
+  floorBox('Living room TV screen',-55,2.3,-12.29,2.5,1.25,0.035,mat.glass,by);
+  // Kitchen with cabinets, sink, faucet and refrigerator.
+  floorBox('Kitchen back wall',-28,1.8,-20,26,3.8,0.25,mat.wall,by);
+  floorBox('Kitchen counter',-28,0.95,-24,12,0.22,1.4,mat.metal,by);
+  for(const x of [-33,-29,-25,-21]){
+    floorBox('Kitchen lower cabinet '+x,x,0.45,-24,3.4,0.8,1.25,mat.dark,by);
+    floorBox('Kitchen upper cabinet '+x,x,2.45,-20.7,3.4,1.1,0.7,mat.dark,by);
+  }
+  floorBox('Kitchen sink basin',-28,1.1,-24,1.35,0.12,0.85,mat.black,by);
+  floorBox('Kitchen faucet',-28,1.38,-24.2,0.08,0.48,0.08,mat.metal,by);
+  floorBox('Kitchen refrigerator',-18.5,1.1,-24,1.8,2.2,1.35,mat.metal,by);
+  floorBox('Kitchen fridge door',-17.55,1.1,-24,0.08,2.05,1.2,mat.dark,by);
+  // Exactly three furnished bedrooms, each with a bed and wall-mounted TV.
+  function basementRoom(name,x,z){
+    floorBox(name+' back wall',x,1.8,z-5,12,3.8,0.25,mat.wall,by);
+    floorBox(name+' left wall',x-6,1.8,z,0.25,3.8,10,mat.wall,by);
+    floorBox(name+' right wall A',x+6,1.8,z-3.4,0.25,3.8,3.2,mat.wall,by);
+    floorBox(name+' right wall B',x+6,1.8,z+3.4,0.25,3.8,3.2,mat.wall,by);
+    floorBox(name+' bed frame',x-2,0.42,z,1.6,0.16,2.8,mat.metal,by);
+    floorBox(name+' bed mattress',x-2,0.56,z,1.5,0.16,2.7,mat.bed,by);
+    floorBox(name+' pillow',x-2,0.68,z-0.95,0.75,0.12,0.45,mat.sheet,by);
+    floorBox(name+' wall TV',x+5.78,2.2,z,0.08,0.9,1.5,mat.black,by);
+    floorBox(name+' TV screen',x+5.72,2.2,z,0.035,0.68,1.2,mat.glass,by);
+  }
+  basementRoom('Basement bedroom 1',-62,-55);
+  basementRoom('Basement bedroom 2',-38,-55);
+  basementRoom('Basement bedroom 3',-62,-82);
+  for(const x of [-78,-52,-26,0,26,52,78]) for(const z of [-130,-100,-70,-40,-10,20]){
+    const lampLight=new THREE.PointLight(0x9bb8c8,2.4,15,2);
+    lampLight.position.set(x,by+3.1,z); scene.add(lampLight);
+    floorBox('Underworld emergency lamp',x,3.55,z,0.8,0.05,0.28,mat.light,by);
+  }
+  for(let i=0;i<12;i++) floorBox('Underworld stair step '+i,0,0.16+i*0.34,27.8-i*0.32,2.8,0.32,0.65,mat.concrete,0);
+
+  // ===== SHORELINE DOCK =====
+  //
 
   const shorelineDock = new THREE.Group();
 
   // Dock planks
-  for (let i = 0; i < 12; i++) {
-    const plankGeometry = new THREE.BoxGeometry(1.5, 0.16, 0.7);
+  for (let i = 0; i < 24; i++) {
+    const plankGeometry = new THREE.BoxGeometry(2.8, 0.16, 0.7);
     const plankMaterial = new THREE.MeshStandardMaterial({
       color: 0x59402b,
       roughness: 0.95
@@ -812,7 +915,8 @@ window.addEventListener('resize',()=>{
   }
 
   // Add the dock to the existing scene.
-  shorelineDock.position.set(5, 0.1, -130);
+  shorelineDock.position.set(5, -0.02, -112);
+  for(let i=0;i<10;i++) box('Dock access boardwalk',5,0.04,-105-i*0.72,2.8,0.14,0.72,mat.crate);
   scene.add(shorelineDock);
 
   console.log("Hospital Zero shoreline dock loaded.");
