@@ -575,6 +575,8 @@ const keycardMark=box('Keycard stripe',-4.9,1.14,22.35,0.19,0.012,0.025,new THRE
 const keys={};
 let yaw=0,pitch=0,flashlightOn=false,flashlightCollected=false,keycardCollected=false,exitUnlocked=false,started=false,lastPadButton=false;
 const player={x:0,z:4.7,speed:3.25};
+let addedFloor=0; // 0 ground, 1 upper story, -1 underworld
+const addedFloorY={upper:4.6,basement:-8.2};
 const hint=document.getElementById('hint');
 const overlay=document.getElementById('overlay');
 const lightState=document.getElementById('lightState');
@@ -607,12 +609,12 @@ function toggleFlashlight(){
 
 function tryInteract(){
  if(!started)return;
- const dGround=Math.hypot(player.x,player.z-29.2);
- const dBasement=Math.hypot(player.x,player.z-27.8);
- if(addedFloor===0&&dGround<2.5){addedFloor=1;player.x=0;player.z=29.2;hint.textContent='Second floor. Press E at the stairwell to return.';updateCamera();return;}
- if(addedFloor===1&&dGround<2.5){addedFloor=0;player.x=0;player.z=29.2;hint.textContent='Back on the ground floor.';updateCamera();return;}
- if(addedFloor===0&&dBasement<2.5){addedFloor=-1;player.x=0;player.z=27.8;hint.textContent='You descended into the underworld. Explore freely; no key is required.';updateCamera();return;}
- if(addedFloor===-1&&dBasement<2.5){addedFloor=0;player.x=0;player.z=27.8;hint.textContent='You returned to the hospital.';updateCamera();return;}
+ const dGround=Math.hypot(player.x-1.35,player.z-29.2);
+ const dBasement=Math.hypot(player.x+1.35,player.z-29.2);
+ if(addedFloor===0&&dGround<0.95){addedFloor=1;player.x=1.35;player.z=29.2;hint.textContent='Second floor. Press E at the stairwell to return.';updateCamera();return;}
+ if(addedFloor===1&&dGround<0.95){addedFloor=0;player.x=1.35;player.z=29.2;hint.textContent='Back on the ground floor.';updateCamera();return;}
+ if(addedFloor===0&&dBasement<0.95){addedFloor=-1;player.x=-1.35;player.z=29.2;hint.textContent='You descended into the underworld. Explore freely; no key is required.';updateCamera();return;}
+ if(addedFloor===-1&&dBasement<0.95){addedFloor=0;player.x=-1.35;player.z=29.2;hint.textContent='You returned to the hospital.';updateCamera();return;}
  if(addedFloor!==0){hint.textContent='Explore this floor. Find the stairwell and press E to change floors.';return;}
  const near=(obj,r=1.8)=>Math.hypot(player.x-obj.position.x,player.z-obj.position.z)<r;
 
@@ -788,8 +790,6 @@ window.addEventListener('resize',()=>{
 
   // ===== EXPANSION TEST BUILD: SECOND STORY + FULL-ISLAND UNDERWORLD =====
   // New levels use their own floor heights and collision bounds. No key required.
-  let addedFloor = 0; // 0 ground, 1 upper story, -1 underworld
-  const addedFloorY = {upper:4.6, basement:-8.2};
   const floorBox = (name,x,y,z,sx,sy,sz,material,offset) => box(name,x,y+offset,z,sx,sy,sz,material);
   const stairPoint = {x:0,z:29.2};
   const basementPoint = {x:0,z:27.8};
