@@ -30,7 +30,7 @@ button{margin-top:20px;padding:14px 22px;border:0;background:#e8f2fa;color:#1118
   <div id="title">HOSPITAL ZERO</div>
   <div id="credits">A game by Mxtt704<br>YouTube: Mxtt704<br>TikTok: Mxtt704</div>
   <div id="crosshair"></div>
-  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>KEYCARD: <span id="keyState">NOT FOUND</span><br>LOCATION: HOSPITAL<br>OBJECTIVE: Find the keycard, escape, and investigate the maintenance building.</div>
+  <div id="status">FLASHLIGHT: <span id="lightState">NOT FOUND</span><br>KEYCARD: <span id="keyState">NOT FOUND</span><br>LOCATION: HOUSE<br>OBJECTIVE: Find the keycard, escape, and investigate the maintenance building.</div>
   <div id="hint">Enter the hospital when you are ready.</div>
 </div>
 <div id="overlay">
@@ -877,6 +877,52 @@ window.addEventListener('resize',()=>{
     floorBox('Underworld emergency lamp',x,3.55,z,0.8,0.05,0.28,mat.light,by);
   }
   for(let i=0;i<12;i++) floorBox('Underworld stair step '+i,0,0.16+i*0.34,27.8-i*0.32,2.8,0.32,0.65,mat.concrete,0);
+
+
+  // ===== HOUSE CONVERSION: EXTERIOR SHELL =====
+  // The existing interior and island remain intact while the former hospital
+  // receives a weathered two-story house exterior. Keep this on the test branch.
+  const houseSiding = new THREE.MeshStandardMaterial({color:0x77756a,roughness:0.98});
+  const houseTrim = new THREE.MeshStandardMaterial({color:0x332f2a,roughness:0.95});
+  const houseRoof = new THREE.MeshStandardMaterial({color:0x292d31,roughness:0.92});
+  const houseWindow = new THREE.MeshStandardMaterial({color:0x17232a,roughness:0.3,metalness:0.15});
+  const houseGlow = new THREE.MeshBasicMaterial({color:0x8d9ca0});
+  // Side walls and rear wall form the outside silhouette around the old interior.
+  box('House west exterior',-7.15,2.05,13.5,0.35,4.1,39,houseSiding);
+  box('House east exterior',7.15,2.05,13.5,0.35,4.1,39,houseSiding);
+  box('House rear exterior',0,2.05,-6.35,14.6,4.1,0.35,houseSiding);
+  // Front facade has a central entrance opening, with broad porch framing.
+  box('House front facade left',-4.7,2.05,33.1,5.2,4.1,0.35,houseSiding);
+  box('House front facade right',4.7,2.05,33.1,5.2,4.1,0.35,houseSiding);
+  box('House front door header',0,3.85,33.1,4.2,0.5,0.4,houseTrim);
+  box('House front porch floor',0,0.05,34.05,5.1,0.18,2.5,houseTrim);
+  for(const x of [-2.25,2.25]) box('House porch post',x,1.9,34.05,0.18,3.7,0.18,houseTrim);
+  // A dark gabled roof silhouette, with ridge running the length of the house.
+  const roofWest=box('House roof west slope',-3.65,5.15,13.3,8.4,0.32,40.4,houseRoof);
+  roofWest.rotation.z=-0.48;
+  const roofEast=box('House roof east slope',3.65,5.15,13.3,8.4,0.32,40.4,houseRoof);
+  roofEast.rotation.z=0.48;
+  box('House roof ridge',0,7.08,13.3,0.28,0.28,40.8,houseTrim);
+  // Windows: dark glass with simple trim on both stories.
+  for(const z of [-3,5,14,23]){
+    for(const x of [-7.0,7.0]){
+      box('House side window trim',x,2.55,z,0.12,1.25,1.65,houseTrim);
+      box('House side window glass',x+(x<0?0.075:-0.075),2.55,z,0.045,0.98,1.32,houseWindow);
+      box('House side window mullion',x+(x<0?0.11:-0.11),2.55,z,0.035,0.98,0.07,houseTrim);
+    }
+  }
+  for(const x of [-4.7,4.7]){
+    for(const y of [1.75,5.15]){
+      box('House front window trim',x,y,32.88,1.65,1.25,0.12,houseTrim);
+      box('House front window glass',x,y,32.79,1.32,0.95,0.035,houseWindow);
+      box('House front window crossbar',x,y,32.75,1.32,0.055,0.035,houseTrim);
+    }
+  }
+  box('House porch light fixture',0,3.05,32.82,0.24,0.35,0.12,houseTrim);
+  box('House porch light glow',0,3.05,32.73,0.12,0.18,0.035,houseGlow);
+  box('House entrance door',0,1.55,32.86,1.75,3.05,0.12,houseTrim);
+  box('House entrance door inset',0,1.7,32.78,1.28,2.5,0.035,mat.dark);
+  box('House entrance handle',0.58,1.45,32.72,0.09,0.22,0.07,mat.metal);
 
   // ===== SHORELINE DOCK =====
   //
